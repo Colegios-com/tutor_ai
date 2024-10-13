@@ -123,7 +123,7 @@ async def stream_generate(websocket, parameters: Parameters, template: dict) -> 
         await asyncio.sleep(0.01)
 
 
-def batch_respond(message: str, image_base64: str) -> str:
+def batch_respond(message: str, context: dict, image_base64: str) -> str:
     prompt = f'''
     You are an AI tutor capable of assisting with a wide range of subjects and questions in multiple languages. Your role is to provide guidance, explanations, and answers tailored to the student's needs. When responding, follow these guidelines:
 
@@ -164,6 +164,10 @@ def batch_respond(message: str, image_base64: str) -> str:
     Remember, your goal is to guide the student towards understanding and mastery of the subject, not just to provide answers. Always communicate in the language used by the student to ensure effective learning and clear communication.
     
     Here is the message you need to respond to: {message}
+
+    Here is the relevant context of the conversation: {context['vectors']}
+
+    Here is the most recent messages: {context['messages']}
     
     '''
     raw_response = together_client.batch_response(prompt=prompt, image_base64=image_base64, model=llama90bt, max_tokens=2500)
@@ -237,7 +241,7 @@ def colegios_json_bot(parameters: Parameters, content: str) -> str:
         + f'\nYou are tasked with creating question a {parameters.template} test in Spanish.'
         + f'\nThe test should be based on the following content: {content}'
         + f'\nQuestions should be progressively more difficult and should build on the previous question.'
-        + f'\The test must meet the following criteria:'
+        + f'\nThe test must meet the following criteria:'
         + f'\nGrade: {parameters.grade}'
         + f'\nClass Level: {parameters.class_level}'
         + f'\nSubject: {parameters.subject}'

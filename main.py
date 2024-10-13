@@ -1,14 +1,18 @@
 # Init
 from init.fast_api import app
 from init.whatsapp import whatsapp_client
+import init.firebase
 
 # Utilities
 from utilities.parsing import repair_json_response
 from utilities.embedding import embed_data
-from utilities.storage import save_data, get_data, delete_data, query_data
+from utilities.vector_storage import save_vectors, get_vectors, delete_vectors, query_vectors
+from utilities.storage import save_data, get_data, update_data, delete_data
 from utilities.transformer import generate_descriptors, stream_rewrite, stream_generate, batch_optimize, batch_respond
 from utilities.classifier import classify
 from utilities.templates import get_template_data
+from utilities.whatsapp import save_message, get_messages
+
 
 # Models
 from data.models import Parameters, Template
@@ -41,16 +45,15 @@ def verify(authorization_token):
 @app.post('/embeddings/')
 def post_embeddings(template: Template) -> str:
     raw_descriptors = generate_descriptors(template=template)
-    print(raw_descriptors)
     descriptors = raw_descriptors.strip().split('|')
-    embeddings = embed_data(descriptors=descriptors)
-    save_data(template_id=template.id, descriptors=descriptors, embeddings=embeddings)
+    embeddings = embed_data(data=descriptors)
+    save_vectors(identifier=template.id, data=descriptors, embeddings=embeddings)
     return 'Data embedded successfully.'
 
 
 @app.delete('/embeddings/{id}/')
 def delete_embeddings(id: str) -> str:
-    success = delete_data(id=id)
+    success = delete_vectors(id=id)
     return 'Data deleted successfully.' if success else 'Data deletion failed.'
 
 
@@ -59,7 +62,6 @@ def colegios_rewrite_view(parameters: Parameters, request: Request) -> dict:
     if(verify(request)):
         old_template = get_template_data(request, parameters.template)
         intent = determine_intent(f'{old_template["title"]}: {parameters.instructions}')
-        print(intent)
         if intent == 'new_document':
             template_id = query_templates(parameters.instructions)
             template = get_template_data(request, template_id)
@@ -133,19 +135,15 @@ async def generate_document(websocket: WebSocket) -> str:
 
 @app.get('/whatsapp/')
 async def whatsapp_webhook(hub_mode: str = Query(..., alias='hub.mode'), hub_challenge: int = Query(..., alias='hub.challenge'), hub_verify_token: str = Query(..., alias='hub.verify_token')):
-    if hub_mode == 'subscribe' and hub_verify_token == 'HAPPY':
-        print(hub_challenge)
+    if hub_mode == 'subscribe' and hub_verify_token == '!MdA3tCPvdyIdPg&':
         return hub_challenge
     else:
-        print('Invalid request.')
         return 'Invalid request.'
 
 
 @app.post('/whatsapp/')
 async def whatsapp_webhook(request: Request):
     webhook_data = await request.json()
-    print(webhook_data)
-
     if 'entry' in webhook_data and webhook_data['entry']:
         for entry in webhook_data['entry']:
             if 'changes' in entry:
@@ -155,25 +153,37 @@ async def whatsapp_webhook(request: Request):
                         for message in messages:
                             # Check for typical user message characteristics
                             if 'from' in message and 'type' in message:
+                                message_id = message['id']
                                 phone_number = message['from']
 
-                                whatsapp_client.send_reaction(to=phone_number, message_id=message['id'])
+                                whatsapp_client.send_reaction(to=phone_number, message_id=message_id, reaction='💬')
                                 message_text = None
                                 image_base64 = None
+
+                                context = get_messages(phone_number=message['from'], message=message_text)
 
                                 if message['type'] == 'image':
                                     message_text = message['image']['caption'] if 'caption' in message['image'] else 'The student has not provided a message. Focus on the content on the image to resolve the question.'
                                     image_id = message['image']['id']
+                                    save_message(message_id=message_id, phone_number=message['from'], message_dict=message, image_id=image_id)
                                     image_url = whatsapp_client.get_media(image_id)
                                     image_base64 = whatsapp_client.download_and_convert_to_base64(image_url)
                                 elif message['type'] == 'text':
                                     message_text = message['text']['body']
+                                    save_message(message_id=message_id, phone_number=message['from'], message_dict=message)
 
                                 try:
-                                    response = batch_respond(message_text, image_base64)
+                                    response = batch_respond(message_text, context, image_base64)
                                     result = whatsapp_client.send_message(to=phone_number, message=response)
+
+                                    response_message = result['messages'][0]
+
+                                    response_message['from'] = 'agent'
+                                    response_message['text'] = {'body': response}
+                                    
+                                    save_message(message_id=f'{message_id} agent', phone_number=message['from'], message_dict=response_message)
+
+                                    whatsapp_client.send_reaction(to=phone_number, message_id=message_id, reaction='🖍️')
 
                                 except Exception as e:
                                     print(f'Exception occurred while sending message: {str(e)}')
-    
-    return False

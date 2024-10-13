@@ -11,5 +11,5 @@ def get_template_data(authorization, template_id):
         data = response.json()
         return data
     except requests.exceptions.RequestException as e:
-        print('Error occurred while making the request:', e)
+        print('Error occurred fetching template:', e)
         return None

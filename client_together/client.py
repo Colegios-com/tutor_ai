@@ -40,7 +40,6 @@ class TogetherAiClient:
             }
 
             if image_base64:
-                print('Got image')
                 payload['messages'][0]['content'].append({
                     'type': 'image_url',
                     'image_url': {
@@ -55,8 +54,8 @@ class TogetherAiClient:
             )
             if response.status_code == 200:
                 response = response.json()
-                print('Tokens used:')
-                print(response['usage'])
+                # print('Tokens used:')
+                # print(response['usage'])
                 return response['choices'][0]['message']['content']
             else:
                 print(response.text)

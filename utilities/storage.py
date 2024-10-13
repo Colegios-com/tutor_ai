@@ -1,48 +1,47 @@
-from init.chroma import chroma_client
-from init.cohere import cohere_client
+from firebase_admin import db
+import json
 
-from statistics import mode
-
-
-collection = chroma_client.get_or_create_collection(name='colegios_tutor', metadata={'hnsw:space': 'cosine'})
-
-
-def save_data(template_id, descriptors, embeddings):
-    # Save
-    result = collection.upsert(
-        # List of Embeddings (Vectors)
-        embeddings=embeddings,
-        # List of corresponging Sources (String)
-        documents=descriptors,
-        # List of unique IDs per Vector/String pair
-        ids=[f'{template_id} {count}' for count, descriptor in enumerate(descriptors)],
-        # Additional Metadata
-        metadatas=[{'id': template_id} for descriptor in descriptors],
-    )
-    return True
+def save_data(phone_number, message_dict):
+    '''
+    Save a message for a user identified by their phone number.
+    
+    :param phone_number: str, the user's phone number
+    :param message_dict: dict, the message to be saved
+    '''
+    ref = db.reference(f'users/{phone_number}/messages')
+    ref.push(message_dict)
 
 
-def get_data(workspace: str) -> list:
-    return collection.get(where={'workspace': workspace})
+def get_data(phone_number):
+    '''
+    Retrieve all messages for a user identified by their phone number.
+    
+    :param phone_number: str, the user's phone number
+    :return: list of dictionaries, each representing a message
+    '''
+    ref = db.reference(f'users/{phone_number}/messages')
+    messages = ref.get()
+    return [msg for msg in messages.values()] if messages else []
 
 
-def delete_data(id: str):
-    try:
-        collection.delete(where={'id': id})
-        return True
-    except:
-        return False
+def update_data(phone_number, message_id, updated_message_dict):
+    '''
+    Update a specific message for a user.
+    
+    :param phone_number: str, the user's phone number
+    :param message_id: str, the ID of the message to update
+    :param updated_message_dict: dict, the updated message content
+    '''
+    ref = db.reference(f'users/{phone_number}/messages/{message_id}')
+    ref.update(updated_message_dict)
 
 
-async def query_data(instruction: str) -> list:
-    raw_embeddings = cohere_client.embed(texts=[instruction], model='embed-multilingual-v3.0', input_type='search_document')
-    results = collection.query(
-        query_embeddings=raw_embeddings.embeddings,
-        n_results=10,
-    )
-    # Extract all IDs
-    ids = [item['id'] for item in results['metadatas'][0]]
-
-    # Find the mode
-    template_id = mode(ids)
-    return template_id
+def delete_data(phone_number, message_id):
+    '''
+    Delete a specific message for a user.
+    
+    :param phone_number: str, the user's phone number
+    :param message_id: str, the ID of the message to delete
+    '''
+    ref = db.reference(f'users/{phone_number}/messages/{message_id}')
+    ref.delete()

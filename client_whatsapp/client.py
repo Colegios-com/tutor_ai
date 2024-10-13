@@ -8,11 +8,7 @@ class WhatsappClient:
     def __init__(self, key):
         self.key = key
 
-    def send_reaction(self, to, message_id):
-        # Your list of strings
-        reactions = ['🖍️', '✏️', '✨', '💡', '📐', '🔥', '👍', '❤️']
-        reaction = random.choice(reactions)
-
+    def send_reaction(self, to, message_id, reaction):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -40,11 +36,10 @@ class WhatsappClient:
             else:
                 raise Exception
         except Exception as e:
-            print('Something went wrong:', e)
+            print('Error reacting to message:', e)
             return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
 
     def send_message(self, to, message):
-        print('sending message')
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -65,7 +60,7 @@ class WhatsappClient:
                 data=json.dumps(payload)
             )
             if response.status_code == 200:
-                return True
+                return response.json()
             else:
                 raise Exception
         except Exception as e:

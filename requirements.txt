@@ -1,6 +1,7 @@
 chromadb
 cohere
 fastapi
+firebase_admin
 gunicorn
 json_repair
 PyJWT
