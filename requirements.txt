@@ -1,0 +1,7 @@
+chromadb
+cohere
+fastapi
+gunicorn
+json_repair
+PyJWT
+requests

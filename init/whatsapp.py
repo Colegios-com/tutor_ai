@@ -1,0 +1,5 @@
+from client_whatsapp.client import WhatsappClient
+import os
+
+whatsapp_key = os.environ.get('WHATSAPP_KEY') or 'EAAH8K5nwnZCwBOx226GON8zzS5RbVxXEfLHZAfGyY96OXmjk7TI4JRy3xNC2uNcZCZB6IgBkMnJrKwbQwKq8aEN3BC3d3wVXdCjr5HIevDU7gdYa7wCIBHVx1C3xQyWhbarm55niyRWJrsP0QZAeQdZASZBvRgtnRQLsJMXacojsvoYIG9ZC9Ka7yoJ1Ncg2Fty57QZDZD'
+whatsapp_client = WhatsappClient(key=whatsapp_key)
