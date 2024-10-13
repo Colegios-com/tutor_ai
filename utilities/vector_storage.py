@@ -37,7 +37,7 @@ def query_vectors(data: str, user: str) -> list:
     results = collection.query(
         query_embeddings=raw_embeddings.embeddings,
         where={'user': user},
-        n_results=10,
+        n_results=25,
     )
     # Extract all IDs
     documents = [document for document in results['documents'][0]]

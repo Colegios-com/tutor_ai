@@ -20,6 +20,7 @@ from fastapi import WebSocket, Request, HTTPException, Query
 
 from starlette.concurrency import run_in_threadpool
 
+from datetime import datetime
 import jwt
 import json
 import os
@@ -151,7 +152,6 @@ async def whatsapp_webhook(request: Request):
                     if 'value' in change and 'messages' in change['value']:
                         messages = change['value']['messages']
                         for message in messages:
-                            # Check for typical user message characteristics
                             if 'from' in message and 'type' in message:
                                 message_id = message['id']
                                 phone_number = message['from']
@@ -161,6 +161,10 @@ async def whatsapp_webhook(request: Request):
                                 image_base64 = None
 
                                 context = get_messages(phone_number=message['from'], message=message_text)
+
+
+                                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                message['timestamp'] = now
 
                                 if message['type'] == 'image':
                                     message_text = message['image']['caption'] if 'caption' in message['image'] else 'The student has not provided a message. Focus on the content on the image to resolve the question.'
@@ -178,12 +182,15 @@ async def whatsapp_webhook(request: Request):
 
                                     response_message = result['messages'][0]
 
+                                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                     response_message['from'] = 'agent'
+                                    response_message['type'] = 'text'
                                     response_message['text'] = {'body': response}
+                                    response_message['timestamp'] = now
                                     
                                     save_message(message_id=f'{message_id} agent', phone_number=message['from'], message_dict=response_message)
 
-                                    whatsapp_client.send_reaction(to=phone_number, message_id=message_id, reaction='🖍️')
+                                    whatsapp_client.send_reaction(to=phone_number, message_id=message_id, reaction='👍')
 
                                 except Exception as e:
                                     print(f'Exception occurred while sending message: {str(e)}')
