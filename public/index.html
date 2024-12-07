@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aldous | Tu profesor virtual por WhatsApp</title>
+    <style>
+        /* Font Faces */
+        @font-face {
+            font-family: 'IntroScript';
+            src: url('fonts/IntroScript/IntroScript-Trial-Black.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Mont';
+            src: url('fonts/Mont/Mont-Regular.woff2') format('woff2'),
+                url('fonts/Mont/Mont-Regular.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Mont';
+            src: url('fonts/Mont/Mont-Bold.woff2') format('woff2'),
+                url('fonts/Mont/Mont-Bold.woff') format('woff');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* Root Variables & Base Styles */
+        :root {
+            --primary: #25D366;
+            --dark: #075E54;
+            --light: #DCF8C6;
+            --white: #ffffff;
+            --accent: #ff4444;
+            --desktop-padding: max(20px, min(8vw, 50px));
+            --mobile-padding: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Mont', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Common Section Styles */
+        .section-subtitle {
+            font-size: clamp(14px, 2vw, 18px);
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: clamp(36px, 8vw, 80px);
+            font-weight: 900;
+            color: var(--dark);
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            padding: 0 20px;
+        }
+
+        .section-description {
+            font-size: clamp(16px, 2.5vw, 20px);
+            color: var(--dark);
+            opacity: 0.8;
+            text-align: center;
+            max-width: min(600px, 90%);
+            margin: 0 auto 50px;
+            padding: 0 20px;
+        }
+
+        /* Button Styles */
+        .whatsapp-btn, .nav-whatsapp-btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .whatsapp-btn {
+            height: clamp(50px, 10vw, 80px);
+            padding: 0 clamp(20px, 5vw, 50px);
+            font-size: clamp(18px, 4vw, 30px);
+            font-weight: 800;
+            gap: 15px;
+            max-width: min(400px, 90%);
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .nav-whatsapp-btn {
+            height: 40px;
+            padding: 0 20px;
+            font-size: 16px;
+            gap: 8px;
+        }
+
+        .whatsapp-btn:hover, .nav-whatsapp-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Navigation */
+        .navbar {
+            height: 80px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 var(--desktop-padding);
+            z-index: 1000;
+            background-color: var(--light);
+        }
+
+        .navbar.scrolled {
+            background-color: var(--white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-family: 'IntroScript', sans-serif;
+            font-size: 30px;
+            font-weight: 900;
+            color: var(--dark);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 1001;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            position: relative;
+            z-index: 1001;
+        }
+
+        .nav-link {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        /* Mobile Menu */
+        .hamburger {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--dark);
+            position: relative;
+            z-index: 1001;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-direction: column;
+            gap: 25px;
+            z-index: 999;
+            align-items: center;
+            text-align: center;
+        }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        .mobile-menu .nav-whatsapp-btn {
+            width: 100%;
+            height: 60px;
+            padding: 0;
+            font-size: 20px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .mobile-menu .nav-link {
+            width: 100%;
+            font-size: 18px;
+            padding: 10px 0;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 70vh;
+            background: linear-gradient(to bottom, var(--light), var(--white));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: var(--desktop-padding);
+            padding-top: clamp(120px, 20vh, 250px);
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: clamp(75px, 10vw, 150px);
+            font-weight: 900;
+            color: var(--dark);
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: clamp(20px, 4vw, 30px);
+            font-weight: 600;
+            color: var(--dark);
+            max-width: min(1000px, 90%);
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+
+        .cta-container {
+            display: flex;
+            align-items: center;
+            gap: clamp(20px, 5vw, 50px);
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Preview Section */
+        .preview {
+            padding: var(--desktop-padding);
+            background: linear-gradient(to bottom, var(--white), var(--light));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-container {
+            display: flex;  /* Change from grid to flex */
+            gap: clamp(40px, 8vw, 80px);
+            width: min(1400px, 90%);
+            margin: 0 auto;
+            align-items: flex-start;  /* Align items at the top */
+        }
+
+        .preview-demo {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+            flex: 1;  /* Take up equal space */
+            display: flex;
+            justify-content: center;
+        }
+
+        .preview-features {
+            flex: 1;  /* Take up equal space */
+            display: grid;
+            grid-template-columns: 1fr;  /* Single column by default */
+            gap: 20px;
+        }
+
+        .preview-feature {
+            cursor: pointer;
+            padding: 15px;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-feature::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .preview-feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .preview-feature.active {
+            background: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .preview-feature.active .feature-icon,
+        .preview-feature.active .feature-content h3,
+        .preview-feature.active .feature-content p {
+            color: var(--white);
+        }
+
+        .preview-feature:not(.active) {
+            opacity: 0.7;
+        }
+
+        /* iPhone Mockup */
+        .iphone-mockup {
+            width: min(300px, 90vw);
+            height: auto;
+            aspect-ratio: 1/2;
+            background: var(--dark);
+            border-radius: 45px;
+            padding: 15px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+        }
+
+        .iphone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 25px;
+            background: var(--dark);
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            z-index: 2;
+        }
+
+        .iphone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            border-radius: 35px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .demo-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            position: absolute;
+            transition: opacity 0.5s ease;
+        }
+
+        .demo-video.active {
+            opacity: 1;
+        }
+
+        /* Features Section */
+        .features {
+            padding: var(--desktop-padding);
+            background: linear-gradient(to bottom, var(--white), var(--light));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-content h3 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 0 0 5px 0;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--dark);
+            margin: 0;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        /* Testimonials Section */
+        .testimonials {
+            padding: var(--desktop-padding);
+            background: linear-gradient(to bottom, var(--light), var(--white));
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .testimonials-track {
+            display: flex;
+            gap: 30px;
+            animation: scroll 80s linear infinite;
+            width: max-content;
+            padding: 20px 0;
+        }
+
+        .testimonial-card {
+            width: 300px;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .testimonial-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .testimonial-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .testimonial-info h4 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .testimonial-info p {
+            font-size: 14px;
+            color: var(--dark);
+            opacity: 0.7;
+            margin: 0;
+        }
+
+        .testimonial-text {
+            font-size: 16px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* Pricing Section */
+        .prices {
+            min-height: 100vh;
+            padding: var(--desktop-padding);
+            background: linear-gradient(to bottom, var(--light), var(--white));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .price-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .price-card {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .price-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .price-card.popular {
+            transform: scale(1.05);
+            border: 2px solid var(--primary);
+        }
+
+        .price-card.popular:hover {
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--primary);
+            color: var(--white);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .price-card h3 {
+            font-size: clamp(20px, 4vw, 24px);
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+
+        .price-card .price {
+            font-size: clamp(36px, 8vw, 48px);
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .price-card .price span {
+            font-size: clamp(14px, 3vw, 16px);
+            opacity: 0.8;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .price-card ul {
+            list-style: none;
+            margin-bottom: 30px;
+            flex-grow: 1;
+        }
+
+        .price-card li {
+            font-size: clamp(14px, 3vw, 16px);
+            margin-bottom: 15px;
+            padding-left: 25px;
+            position: relative;
+            color: var(--dark);
+            opacity: 0.9;
+        }
+
+        .price-card li:before {
+            content: "✓";
+            color: var(--primary);
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+        }
+
+        .price-card .whatsapp-btn {
+            height: 60px;
+            padding: 0 20px;
+            font-size: clamp(16px, 4vw, 20px);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: auto;
+        }
+
+        /* Whitepaper */
+        .whitepaper {
+            padding: var(--desktop-padding);
+            background: linear-gradient(to bottom, var(--white), var(--light));
+            text-align: center;
+        }
+
+        .whitepaper-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .whitepaper-content {
+            margin-bottom: 30px;
+        }
+
+        .whitepaper-content h3 {
+            font-size: 24px;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+
+        .whitepaper-content ul {
+            list-style: none;
+            text-align: left;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .whitepaper-content li {
+            font-size: 18px;
+            color: var(--dark);
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .whitepaper-form {
+            display: flex;
+            gap: 15px;
+            margin: 0 auto;
+        }
+
+        .whitepaper-form input {
+            width: 100%;
+            height: 60px;
+            padding: 0 20px;
+            border: 2px solid var(--primary);
+            border-radius: 5px;
+            font-size: 18px;
+            font-family: 'Mont', sans-serif;
+        }
+
+        .whitepaper-form input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.2);
+        }
+
+        .whitepaper-form .whatsapp-btn {
+            height: 60px;
+            padding: 0 20px;
+            justify-content: center;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--light);
+            padding: var(--desktop-padding);
+            width: 100%;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 50px;
+        }
+
+        .footer-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .footer-column h3 {
+            font-family: 'Mont', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            font-family: 'Mont', sans-serif;
+            color: var(--dark);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-column a:hover {
+            color: var(--primary);
+        }
+
+        .footer-logo {
+            font-family: 'IntroScript', sans-serif;
+            font-size: 30px;
+            font-weight: 900;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .footer-brand a:not(.footer-logo) {
+            font-family: 'Mont', sans-serif;
+            font-size: 25px;
+            font-weight: 700;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        /* Animations */
+        .bounce-text {
+            cursor: pointer;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-100% - 30px)); }
+        }
+
+        /* Media Queries */
+        @media (max-width: 1200px) {
+            .price-card.popular {
+                transform: none;
+            }
+
+            .price-card.popular:hover {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .preview-container {
+                flex-direction: column;  /* Stack vertically on mobile */
+                gap: 40px;
+                padding: 0 20px;
+            }
+
+            .preview-demo {
+                position: relative;
+                top: 0;
+                width: 100%;
+                order: 1;  /* Put demo first on mobile */
+            }
+
+            .preview-features {
+                width: 100%;
+                order: 2;  /* Put features second on mobile */
+            }
+
+            .cta-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 30px;
+                padding: 0 20px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .footer-logo {
+                font-size: 30px;
+            }
+
+            .footer-brand a:not(.footer-logo) {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            body {
+                overflow-x: hidden;
+            }
+            
+            .price-cards {
+                grid-template-columns: 1fr;
+                width: 100%;
+                padding: 20px;
+            }
+            
+            .price-card {
+                max-width: 100%;
+            }
+            
+            .testimonial-card {
+                padding: 20px;
+            }
+            
+            .testimonials-track {
+                animation: scroll 60s linear infinite;
+            }
+
+            .features-grid {
+                width: 100%;
+                padding: 0 20px;
+            }
+
+            .preview-container {
+                width: 100%;
+            }
+
+            .whitepaper-form {
+                flex-direction: column;
+                padding: 0 20px;
+            }
+
+            .whitepaper-container {
+                padding: 30px 20px;
+            }
+
+            .whitepaper-form .whatsapp-btn {
+                width: 100%;
+            }
+
+            .footer-content {
+                gap: 20px;
+            }
+
+            .footer-column h3 {
+                margin-bottom: 5px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .navbar {
+                padding: 0 var(--mobile-padding);
+            }
+
+            .preview-container {
+                padding: 20px;
+            }
+
+            .footer-content {
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="#" class="logo">🖍️ colegios.com</a>
+        <div class="nav-links">
+            <a href="#preview" class="nav-link">Producto</a>
+            <a href="#testimonials" class="nav-link">Comentarios</a>
+            <a href="#features" class="nav-link">Ventajas</a>
+            <a href="#prices" class="nav-link">Precios</a>
+            <a href="#whitepaper" class="nav-link">Whitepaper</a>
+            <a class="nav-whatsapp-btn">
+                <span>Pruébalo</span>
+                <span>📱</span>
+            </a>
+        </div>
+        <div class="hamburger">☰</div>
+    </nav>
+
+    <div class="mobile-menu">
+        <a href="#preview" class="nav-link">Producto</a>
+            <a href="#testimonials" class="nav-link">Comentarios</a>
+            <a href="#features" class="nav-link">Ventajas</a>
+            <a href="#prices" class="nav-link">Precios</a>
+            <a href="#whitepaper" class="nav-link">Whitepaper</a>
+        <a class="nav-whatsapp-btn">
+            <span>Pruébalo</span>
+            <span>📱</span>
+        </a>
+    </div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Aldous</h1>
+            <p>Tu tutor IA personalizado. Por WhatsApp. 24/7 🙌</p>
+            <div class="cta-container">
+                <a class="whatsapp-btn">
+                    <span>Pruébalo Hoy</span>
+                    <span class="bounce-text">📱</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="preview" class="preview">
+        <div class="section-subtitle">Resultados Reales</div>
+        <h2 class="section-title">Mejora Comprobada</h2>
+        <p class="section-description">
+            9 de cada 10 estudiantes mejoran sus notas en el primer mes
+        </p>
+        <div class="preview-container">
+            <div class="preview-demo">
+                <div class="iphone-mockup">
+                    <div class="iphone-notch"></div>
+                    <div class="iphone-screen">
+                        <video class="demo-video active" data-feature="answers" autoplay loop muted playsinline>
+                            <source src="demo-answers.mp4" type="video/mp4">
+                        </video>
+                        <video class="demo-video" data-feature="exercises" autoplay loop muted playsinline>
+                            <source src="demo-exercises.mp4" type="video/mp4">
+                        </video>
+                        <video class="demo-video" data-feature="chat" autoplay loop muted playsinline>
+                            <source src="demo-chat.mp4" type="video/mp4">
+                        </video>
+                        <video class="demo-video" data-feature="instant" autoplay loop muted playsinline>
+                            <source src="demo-instant.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+            </div>
+            <div class="preview-features">
+                <div class="preview-feature active" data-feature="text">
+                    <div class="feature-icon">💬</div>
+                    <div class="feature-content">
+                        <h3>Consultas Ilimitadas</h3>
+                        <p>Resuelve dudas al instante, cuando más lo necesites. Aprovecha cada momento de aprendizaje</p>
+                    </div>
+                </div>
+                <div class="preview-feature" data-feature="image">
+                    <div class="feature-icon">📸</div>
+                    <div class="feature-content">
+                        <h3>Explicaciones Visuales</h3>
+                        <p>Fotografía cualquier ejercicio y recibe una guía paso a paso. Comprensión profunda garantizada</p>
+                    </div>
+                </div>
+                <div class="preview-feature" data-feature="voice">
+                    <div class="feature-icon">🎤</div>
+                    <div class="feature-content">
+                        <h3>Tutorías por Voz</h3>
+                        <p>Explica tus dudas hablando naturalmente. Como conversar con tu tutor personal favorito</p>
+                    </div>
+                </div>
+                <div class="preview-feature" data-feature="chat">
+                    <div class="feature-icon">💡</div>
+                    <div class="feature-content">
+                        <h3>Aprendizaje Natural</h3>
+                        <p>Conversaciones que construyen conocimiento sólido. Prepárate mejor para cada clase</p>
+                    </div>
+                </div>
+                <div class="preview-feature" data-feature="quiz">
+                    <div class="feature-icon">✍️</div>
+                    <div class="feature-content">
+                        <h3>Práctica Inteligente</h3>
+                        <p>Comando /quiz genera ejercicios personalizados. Refuerza temas clave y prepárate para exámenes</p>
+                    </div>
+                </div>
+                <div class="preview-feature" data-feature="progress">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-content">
+                        <h3>Seguimiento Detallado</h3>
+                        <p>Visualiza el progreso con /progreso. Identifica áreas de mejora y celebra los avances</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="testimonials" class="testimonials">
+        <div class="section-subtitle">Casos de Éxito</div>
+        <h2 class="section-title">Resultados Reales</h2>
+        <p class="section-description">
+            Descubre por qué estudiantes y padres de familia confían en Aldous
+        </p>
+        <div class="testimonials-track">
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👩</div>
+                    <div class="testimonial-info">
+                        <h4>Ana Sofía</h4>
+                        <p>Estudiante de 10°</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Subí de 7.8 a 8.9 en matemáticas este trimestre. Me ayudó mucho poder preguntar mis dudas en cualquier momento 📚"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👨</div>
+                    <div class="testimonial-info">
+                        <h4>Roberto Méndez</h4>
+                        <p>Padre de Familia</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Mis tres hijos lo usan para diferentes materias. Es más económico y efectivo que las clases particulares 💰"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👧</div>
+                    <div class="testimonial-info">
+                        <h4>María Fernanda</h4>
+                        <p>Estudiante de 9°</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Me ayudó a entender física cuando más lo necesitaba. Mejoré mi nota de 6.5 a 8.2 en dos meses ⚡"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👩‍🏫</div>
+                    <div class="testimonial-info">
+                        <h4>Carmen Rodríguez</h4>
+                        <p>Profesora de Matemáticas</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Mis alumnos que usan Aldous vienen mejor preparados a clase y hacen preguntas más profundas 📝"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👨‍🎓</div>
+                    <div class="testimonial-info">
+                        <h4>Diego Morales</h4>
+                        <p>Estudiante de 11°</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Me salvó en química. Los ejercicios paso a paso me ayudaron a entender conceptos difíciles 🧪"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👩‍👦</div>
+                    <div class="testimonial-info">
+                        <h4>Laura Pérez</h4>
+                        <p>Madre de Familia</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Mi hijo mejoró sus notas en inglés y matemáticas. La disponibilidad 24/7 es increíble 🌟"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👨‍🏫</div>
+                    <div class="testimonial-info">
+                        <h4>Miguel Ángel</h4>
+                        <p>Coordinador Académico</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Hemos visto una mejora del 15% en promedio en los estudiantes que usan Aldous regularmente 📈"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👧</div>
+                    <div class="testimonial-info">
+                        <h4>Valeria Torres</h4>
+                        <p>Estudiante de 8°</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Las explicaciones son muy claras. Me ayudó a pasar de 7.0 a 8.5 en álgebra en un trimestre 📚"</p>
+            </div>
+            <!-- Duplicate first 4 cards for infinite scroll -->
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👩</div>
+                    <div class="testimonial-info">
+                        <h4>Ana Sofía</h4>
+                        <p>Estudiante de 10°</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Subí de 7.8 a 8.9 en matemáticas este trimestre. Me ayudó mucho poder preguntar mis dudas en cualquier momento 📚"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👨</div>
+                    <div class="testimonial-info">
+                        <h4>Roberto Méndez</h4>
+                        <p>Padre de Familia</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Mis tres hijos lo usan para diferentes materias. Es más económico y efectivo que las clases particulares 💰"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👧</div>
+                    <div class="testimonial-info">
+                        <h4>María Fernanda</h4>
+                        <p>Estudiante de 9°</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Me ayudó a entender física cuando más lo necesitaba. Mejoré mi nota de 6.5 a 8.2 en dos meses ⚡"</p>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">👩‍🏫</div>
+                    <div class="testimonial-info">
+                        <h4>Carmen Rodríguez</h4>
+                        <p>Profesora de Matemáticas</p>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Mis alumnos que usan Aldous vienen mejor preparados a clase y hacen preguntas más profundas 📝"</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="section-subtitle">Ventajas Exclusivas</div>
+        <h2 class="section-title">¿Por Qué Aldous?</h2>
+        <p class="section-description">
+            Tu tutor personal de IA, tan fácil como chatear con un amigo
+        </p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="emoji">💬</div>
+                <div class="feature-content">
+                    <h3>Interfaz Natural</h3>
+                    <p>Usa WhatsApp como siempre. Sin apps que descargar, sin nuevas interfaces que aprender</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">📱</div>
+                <div class="feature-content">
+                    <h3>Datos Mínimos</h3>
+                    <p>Consume menos datos que ver un video de 1 minuto. Ideal para planes limitados</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">⚡</div>
+                <div class="feature-content">
+                    <h3>Respuestas Instantáneas</h3>
+                    <p>Responde en segundos, 24/7. Nunca más esperando horas por ayuda</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">🎯</div>
+                <div class="feature-content">
+                    <h3>Aprende Contigo</h3>
+                    <p>Se adapta a tu nivel y estilo de aprendizaje. Mejora con cada interacción</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">🌟</div>
+                <div class="feature-content">
+                    <h3>Multimodal</h3>
+                    <p>Envía fotos de ejercicios, notas de voz o texto. Recibe explicaciones en el formato que prefieras</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">🧠</div>
+                <div class="feature-content">
+                    <h3>IA de Última Generación</h3>
+                    <p>Basado en GPT-4 y modelos especializados en educación. Explicaciones claras y precisas</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">📚</div>
+                <div class="feature-content">
+                    <h3>Todas las Materias</h3>
+                    <p>De matemáticas a literatura. Un experto en cada tema disponible al instante</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">📈</div>
+                <div class="feature-content">
+                    <h3>Mejora Continua</h3>
+                    <p>Seguimiento personalizado y sugerencias proactivas basadas en tus interacciones</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="prices" class="prices">
+        <div class="section-subtitle">Elige Tu Ventaja</div>
+        <h2 class="section-title">Planes Mensuales</h2>
+        <p class="section-description">
+            Menos que el costo de un tutor tradicional
+        </p>
+        <div class="price-cards">
+            <div class="price-card">
+                <h3>Básico</h3>
+                <div class="price">$49<span>/mes</span></div>
+                <div class="price-compare">Menos que dos clases particulares</div>
+                <ul>
+                    <li>Consultas ilimitadas</li>
+                    <li>Todas los grados</li>
+                    <li>Todas las materias</li>
+                    <li>Ejercicios personalizados</li>
+                </ul>
+                <a href="https://app.recurrente.com/s/colegios-com/plan-basico" class="whatsapp-btn">
+                    Pruébalo Hoy
+                </a>
+            </div>
+            <div class="price-card popular">
+                <div class="popular-badge">Más Popular</div>
+                <h3>Completo</h3>
+                <div class="price">$99<span>/mes</span></div>
+                <div class="price-compare">El valor de dos clases particulares</div>
+                <ul>
+                    <li>Consultas ilimitadas</li>
+                    <li>Todas los grados</li>
+                    <li>Todas las materias</li>
+                    <li>Ejercicios personalizados</li>
+                    <li>Reportes semanales</li>
+                    <li>Seguimiento personalizado</li>
+                    <li>Soporte por email</li>
+                </ul>
+                <a href="https://app.recurrente.com/s/colegios-com/plan-completo" class="whatsapp-btn">
+                    Pruébalo Hoy
+                </a>
+            </div>
+            <div class="price-card">
+                <h3>Familiar</h3>
+                <div class="price">$149<span>/mes</span></div>
+                <div class="price-compare">Menos que un tutor para 3 estudiantes</div>
+                <ul>
+                    <li>Consultas ilimitadas</li>
+                    <li>Todas los grados</li>
+                    <li>Todas las materias</li>
+                    <li>Ejercicios personalizados</li>
+                    <li>Reportes de progreso</li>
+                    <li>Seguimiento personalizado</li>
+                    <li>Soporte por email</li>
+                    <li>Hasta 3 estudiantes</li>
+                </ul>
+                <a href="https://app.recurrente.com/s/colegios-com/plan-familiar" class="whatsapp-btn">
+                    Pruébalo Hoy
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="whitepaper" class="whitepaper">
+        <div class="section-subtitle">Investigación y Resultados</div>
+        <h2 class="section-title">Descarga Nuestro Whitepaper</h2>
+        <p class="section-description">
+            Descubre cómo la IA está transformando la educación personalizada y los resultados comprobados de Aldous
+        </p>
+        <div class="whitepaper-container">
+            <div class="whitepaper-content">
+                <h3>Incluye:</h3>
+                <ul>
+                    <li>✓ Análisis detallado de resultados académicos</li>
+                    <li>✓ Estudios de caso y testimonios verificados</li>
+                    <li>✓ Metodología pedagógica y tecnológica</li>
+                    <li>✓ Comparativas con métodos tradicionales</li>
+                </ul>
+            </div>
+            <form class="whitepaper-form" id="whitepaperForm">
+                <input type="email" placeholder="Tu correo electrónico" required>
+                <button type="submit" class="whatsapp-btn">
+                    <span>Enviar</span>
+                    <span>📚</span>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <a href="#" class="footer-logo">🖍️ colegios.com</a>
+                <a href="mailto:ayuda@colegios.com">ayuda@colegios.com</a>
+                <a href="tel:+50253144545">+502 5314 4545</a>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h3>Ayuda</h3>
+                    <a href="#">FAQs</a>
+                    <a href="#">Tutoriales</a>
+                    <a href="#">Tips</a>
+                </div>
+                <div class="footer-column">
+                    <h3>Empresa</h3>
+                    <a href="#">Sobre Nosotros</a>
+                    <a href="#">Sistema Educativo Finlandés</a>
+                    <a href="#">Becas</a>
+                </div>
+                <div class="footer-column">
+                    <h3>Legal</h3>
+                    <a href="#">Términos y Condiciones</a>
+                    <a href="#">Política de Privacidad</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const navbar = document.querySelector('.navbar');
+        const hamburger = document.querySelector('.hamburger');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const scrollIndicators = document.querySelectorAll('.whatsapp-btn, .nav-whatsapp-btn');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        scrollIndicators.forEach(button => {
+            button.addEventListener('click', () => {
+                const featuresSection = document.querySelector('#prices');
+                featuresSection.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.mobile-menu .nav-link, .mobile-menu .nav-whatsapp-btn').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.mobile-menu') && 
+                !e.target.closest('.hamburger') && 
+                mobileMenu.classList.contains('active')) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const navHeight = navbar.offsetHeight;
+                    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset;
+                    window.scrollTo({
+                        top: targetPosition - navHeight,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        document.querySelectorAll('.preview-feature').forEach(feature => {
+            feature.addEventListener('click', () => {
+                document.querySelectorAll('.preview-feature').forEach(f => {
+                    f.classList.remove('active');
+                });
+                
+                feature.classList.add('active');
+                
+                const featureId = feature.dataset.feature;
+                document.querySelectorAll('.demo-video').forEach(video => {
+                    if (video.dataset.feature === featureId) {
+                        video.classList.add('active');
+                    } else {
+                        video.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        document.getElementById('whitepaperForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = this.querySelector('input[type="email"]').value;
+            // Here you would typically send the email to your server
+            alert('¡Gracias! El whitepaper será enviado a ' + email);
+            this.reset();
+        });
+    </script>
+</body>
+</html>

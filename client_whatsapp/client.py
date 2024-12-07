@@ -1,14 +1,15 @@
-import json
-import random
+from init.openai import openai_client
+
 import requests
 import base64
-import os
+import json
+
 
 class WhatsappClient:
     def __init__(self, key):
         self.key = key
 
-    def send_reaction(self, to, message_id, reaction):
+    def send_reaction(self, message, reaction):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -18,28 +19,29 @@ class WhatsappClient:
             payload = {
                 'messaging_product': 'whatsapp',
                 'recipient_type': 'individual',
-                'to': to,
+                'to': message.phone_number,
                 'type': 'reaction',
                 'reaction': {
-                    'message_id': message_id,
+                    'message_id': message.id,
                     'emoji': reaction
                 }
             }
 
             response = requests.post(
-                'https://graph.facebook.com/v20.0/389338054272783/messages', 
+                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
+            print(response.text)
             if response.status_code == 200:
                 return True
             else:
                 raise Exception
         except Exception as e:
-            print('Error reacting to message:', e)
             return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
 
-    def send_message(self, to, message):
+    
+    def send_template(self, phone_number, template_name):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -48,14 +50,31 @@ class WhatsappClient:
 
             payload = {
                 'messaging_product': 'whatsapp',
-                'to': to,
-                'type': 'text',
-                'text': {
-                    'body': message,
+                'recipient_type': 'individual',
+                'to': phone_number,
+                'type': 'template',
+                'template': {
+                    'name': template_name,
+                    'language': {
+                        'code': 'en'
+                    },
+                    'components': [
+                        {
+                            'type': 'header',
+                            'parameters': [
+                                {
+                                    'type': 'image',
+                                    'image': {
+                                    'link': 'https://colegios-media.s3.amazonaws.com/thumbnails/welcomeBanner.png'
+                                    }
+                                }
+                            ]
+                        },
+                    ]
                 }
             }
             response = requests.post(
-                'https://graph.facebook.com/v20.0/389338054272783/messages', 
+                f'https://graph.facebook.com/v21.0/486935574495266/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
@@ -66,9 +85,37 @@ class WhatsappClient:
         except Exception as e:
             return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
 
-    def get_media(self, media_id):
+
+    def send_message(self, message):
         try:
-            url = f'https://graph.facebook.com/v20.0/{media_id}'
+            headers = {
+                'Authorization': f'Bearer {self.key}',
+                'Content-Type': 'application/json'
+            }
+
+            payload = {
+                'messaging_product': 'whatsapp',
+                'to': message.phone_number,
+                'type': 'text',
+                'text': {
+                    'body': message.text,
+                }
+            }
+            response = requests.post(
+                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages', 
+                headers=headers, 
+                data=json.dumps(payload)
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise Exception
+        except Exception as e:
+            return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
+
+    def get_media(self, id):
+        try:
+            url = f'https://graph.facebook.com/v21.0/{id}'
             
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -85,31 +132,92 @@ class WhatsappClient:
         except Exception as e:
             return {'status': False, 'message': f'Oops, there was an error retrieving the image URL: {e}'}
 
-    def download_and_convert_to_base64(self, media_url):
-        # Download the image            
+    def download_media(self, url):
         headers = {
             'Authorization': f'Bearer {self.key}',
             'Content-Type': 'application/json'
         }
-        response = requests.get(media_url, headers=headers)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            # Get the content type and file extension
-            content_type = response.headers.get('Content-Type', '')
-            ext = content_type.split('/')[-1]
-            
-            # Save the image temporarily
-            temp_filename = f'temp_image.{ext}'
-            with open(temp_filename, 'wb') as f:
-                f.write(response.content)
-            
-            # Read the image and convert to base64
-            with open(temp_filename, 'rb') as image_file:
-                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
-            
-            # Remove the temporary file
-            os.remove(temp_filename)
-            
-            return base64_image
+            return response.content
         else:
-            print(f'Error downloading image: {response.status_code}')
             return None
+        
+    def convert_to_base64(self, file):
+        try:
+            return base64.b64encode(file).decode('utf-8')
+        except Exception:
+            return None
+
+    def transcribe_audio(self, file):
+        try:
+            return openai_client.audio.transcriptions.create(model='whisper-v3', file=file).text
+        except Exception:
+            return None
+        
+    def upload_media(self, message) -> dict:
+        try:
+            with open('analisis_semanal.txt', 'w', encoding='utf-8') as f:
+                analysis_text = '''Análisis de Rendimiento Académico - Enfoque RTI Finlandés\nEstudiante: Enrique\nPeríodo: Últimos 7 días\n\n📊 RESUMEN EJECUTIVO\nEnrique muestra un patrón de aprendizaje que requiere atención personalizada en áreas específicas, manteniendo fortalezas notables en otras. Siguiendo el modelo finlandés de intervención temprana, hemos identificado oportunidades de apoyo inmediato.\n\n💪 FORTALEZAS\n- Excelente participación en discusiones grupales\n- Alta creatividad en resolución de problemas\n- Fuerte capacidad de análisis verbal\n\n🎯 ÁREAS DE ATENCIÓN\n- Organización del tiempo en tareas escritas\n- Consistencia en ejercicios matemáticos básicos\n- Atención sostenida en lecturas largas\n\n📈 PLAN DE INTERVENCIÓN PROPUESTO\nNivel 1 (Apoyo General):\n- Mantener rutinas estructuradas de estudio\n- Implementar pausas activas cada 25 minutos\n- Usar recursos visuales para conceptos abstractos\n\nNivel 2 (Apoyo Focalizado):\n- Sesiones individuales de 20 minutos en matemáticas\n- Ejercicios de comprensión lectora guiada\n- Herramientas de organización personal\n\n🤝 RECOMENDACIONES\nPara Padres:\n- Establecer horarios fijos de estudio\n- Reforzar positivamente los logros pequeños\n- Mantener comunicación regular con tutores\n\nPara Docentes:\n- Proporcionar instrucciones paso a paso\n- Permitir tiempo extra en evaluaciones escritas\n- Implementar evaluación continua\n\nPara Enrique:\n- Utilizar agenda digital/física para organización\n- Practicar técnicas de auto-monitoreo\n- Comunicar dudas inmediatamente\n\n🌟 PRONÓSTICO\nCon la implementación consistente de estas estrategias, esperamos ver mejoras significativas en 3-4 semanas, especialmente en organización y matemáticas básicas.'''
+                f.write(analysis_text)
+
+            headers = {
+                'Authorization': f'Bearer {self.key}'
+            }
+
+            files = {
+            'file': ('analisis_semanal.txt', open('analisis_semanal.txt', 'rb'), 'text/plain', {'Expires': '0'})
+        }
+
+            response = requests.post(
+                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/media',
+                data={
+                    'messaging_product': 'whatsapp',
+                    'type': 'text/plain'
+                },
+                files=files,
+                headers=headers
+            )
+
+            if response.status_code == 200:
+                media_data = response.json()
+                return media_data['id']
+            else:
+                raise Exception(f"Upload failed: {response.text}")
+
+        except Exception as e:
+            return {'status': False, 'message': f'Error uploading analysis: {e}'}
+        
+
+    def send_media(self, message, media_id: str) -> dict:
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.key}',
+                'Content-Type': 'application/json'
+            }
+
+            payload = {
+                'messaging_product': 'whatsapp',
+                'recipient_type': 'individual',
+                'to': message.phone_number,
+                'type': 'document',
+                'document': {
+                    'id': media_id,
+                    'caption': 'Análisis de Rendimiento Académico - Enrique',
+                    'filename': 'analisis_enrique.txt'
+                }
+            }
+
+            response = requests.post(
+                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages',
+                headers=headers,
+                data=json.dumps(payload)
+            )
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise Exception(f"Send failed: {response.text}")
+
+        except Exception as e:
+            return {'status': False, 'message': f'Error sending document: {e}'}

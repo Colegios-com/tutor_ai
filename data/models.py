@@ -2,21 +2,13 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class Template(BaseModel):
+class Message(BaseModel):
     id: str
-    template_type: str
-    title: str
-    description: str
-    metadata: str
-
-
-class Parameters(BaseModel):
-    template: str
-    seed: Optional[str] = None
-    grade: str
-    class_level: str
-    subject: str
-    topic: str
-    instructions: str
-    complexity: str
-    length: str
+    phone_number_id: str
+    sender: str
+    phone_number: str
+    message_type: str
+    text: str
+    context: Optional[str] = None
+    media_id: Optional[str] = None
+    media_content: Optional[str] = None
