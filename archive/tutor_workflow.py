@@ -472,10 +472,6 @@ def compose_response(workflow: Workflow) -> str:
 
 
 # Workflow Initialization
-def print_usage(workflow: Workflow):  
-    print('*** TOTAL TOKENS USED ***')
-    print(f'{workflow.usage} (${workflow.usage/1000000*1.2})')
-
 
 def initialize_tutor_workflow(message) -> str:
     # Initialize Workflow
@@ -484,49 +480,39 @@ def initialize_tutor_workflow(message) -> str:
     # Analyze Image
     if workflow.message.image:
         workflow.message.image_analysis = analyze_image(workflow=workflow)
-        print('IMAGE ANALYSIS: ', workflow.message.image_analysis)
 
     # Academic Analysis
     raw_analysis = get_analysis(workflow=workflow)
     if raw_analysis:
         workflow.analysis = Analysis(**raw_analysis)
-        print('ANALYSIS: ', workflow.analysis.synthesis)
 
     # Interpate User Message
     workflow.previous_message = get_previous_message(message=message)
     workflow.message_intent = determine_message_intent(workflow=workflow)
-    print('MESSAGE INTENT: ', workflow.message_intent)
 
     # Orchestrate Agents
     raw_agents = orchestrate_response(workflow=workflow)
     workflow.agents = raw_agents.split('|')
-    print('AGENTS: ', workflow.agents)
 
     for agent in workflow.agents:
         if agent == 'context_retrieval':
             # Get Context Types
             raw_context_types = select_context_types(workflow=workflow)
             workflow.context_types = raw_context_types.split('|')
-            print('CONTEXT TYPES: ', workflow.context_types)
 
             workflow.context = retrieve_context(workflow=workflow)
             workflow.context_summary = summarize_context(workflow=workflow)
-            print('CONTEXT SUMMARY: ', workflow.context_summary)
 
         # elif agent == 'web_search':
         #     workflow.web_search = search_web(workflow=workflow)
         
         elif agent == 'knowledge_synthesizer':
             workflow.knowledge_pool = synthesize_knowledge(workflow=workflow)
-            print('KNOWLEDGE POOL: ', workflow.knowledge_pool)
         
         elif agent == 'academic_potentializer':
             workflow.potentiallized_response = potentiallize_response(workflow=workflow)
-            print('POTENTIALIZED RESPONSE: ', workflow.potentiallized_response)
 
 
     workflow.raw_response = compose_response(workflow=workflow)
-    print('RAW RESPONSE: ', workflow.raw_response)
 
-    print_usage(workflow=workflow)
     return workflow.raw_response

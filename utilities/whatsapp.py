@@ -62,7 +62,7 @@ def build_user_message(payload: dict) -> Message:
     
     elif 'image' in message:
         media_id = message['image']['id']
-        media_url = whatsapp_client.get_media(id=media_id)
+        media_url = whatsapp_client.get_media_url(id=media_id)
         media_content = whatsapp_client.convert_to_base64(
             file=whatsapp_client.download_media(url=media_url)
         )
@@ -77,7 +77,7 @@ def build_user_message(payload: dict) -> Message:
     
     elif 'audio' in message:
         media_id = message['audio']['id']
-        media_url = whatsapp_client.get_media(id=media_id)
+        media_url = whatsapp_client.get_media_url(id=media_id)
         media_content = whatsapp_client.transcribe_audio(
             file=whatsapp_client.download_media(url=media_url)
         )

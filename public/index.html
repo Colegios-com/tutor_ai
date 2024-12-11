@@ -54,6 +54,7 @@
         }
 
         body {
+            background-color: var(--light);
             font-family: 'Mont', sans-serif;
             line-height: 1.6;
             overflow-x: hidden;
@@ -235,7 +236,8 @@
             justify-content: center;
             align-items: center;
             padding: var(--desktop-padding);
-            padding-top: clamp(120px, 20vh, 250px);
+            margin-top: 80px;
+            padding-top: clamp(40px, 10vh, 80px);
             text-align: center;
             position: relative;
         }
@@ -981,17 +983,23 @@
                 <div class="iphone-mockup">
                     <div class="iphone-notch"></div>
                     <div class="iphone-screen">
-                        <video class="demo-video active" data-feature="answers" autoplay loop muted playsinline>
-                            <source src="demo-answers.mp4" type="video/mp4">
+                        <video class="demo-video active" data-feature="text" autoplay loop muted playsinline>
+                            <source src="videos/textSupport.mp4" type="video/mp4">
                         </video>
-                        <video class="demo-video" data-feature="exercises" autoplay loop muted playsinline>
-                            <source src="demo-exercises.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="image" autoplay loop muted playsinline>
+                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        </video>
+                        <video class="demo-video" data-feature="voice" autoplay loop muted playsinline>
+                            <source src="videos/textSupport.mp4" type="video/mp4">
                         </video>
                         <video class="demo-video" data-feature="chat" autoplay loop muted playsinline>
-                            <source src="demo-chat.mp4" type="video/mp4">
+                            <source src="videos/textSupport.mp4" type="video/mp4">
                         </video>
-                        <video class="demo-video" data-feature="instant" autoplay loop muted playsinline>
-                            <source src="demo-instant.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="quiz" autoplay loop muted playsinline>
+                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        </video>
+                        <video class="demo-video" data-feature="progress" autoplay loop muted playsinline>
+                            <source src="videos/textSupport.mp4" type="video/mp4">
                         </video>
                     </div>
                 </div>

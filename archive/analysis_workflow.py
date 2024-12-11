@@ -61,7 +61,6 @@ def get_analysis(user: str):
     # Object Storage
     url = f'users/{user}/analyses'
     analysis = get_data(url)
-    print(analysis)
 
 
 def save_analysis(analysis: Analysis):
@@ -145,7 +144,6 @@ def analyze_educational_psychologist(message_history) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Educational Psychologist:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -183,7 +181,6 @@ def analyze_communication_specialist(message_history) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Communication Specialist:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -221,7 +218,6 @@ def analyze_instructional_designer(message_history) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Instructional Designer:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -259,7 +255,6 @@ def analyze_cognitive_scientist(message_history) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Cognitive Scientist:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -298,7 +293,6 @@ def analyze_learning_analytics_specialist(memories) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Learning Analytics Specialist:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -336,7 +330,6 @@ def analyze_behavioral_psychologist(memories) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Behavioral Psychologist:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -374,7 +367,6 @@ def analyze_memory_scientist(memories) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Memory Scientist:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -412,7 +404,6 @@ def analyze_cognitive_load_analyst(memories) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Cognitive Load Analyst:', raw_response['usage'])
     return raw_response['response']
 
 
@@ -458,7 +449,6 @@ def analysis_synthesis(analyses) -> str:
         model=llama405bt,
         max_tokens=1500
     )
-    print('Master Analyst:', raw_response['usage'])
     return raw_response['response']
 
 

@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/evaluation/:phoneNumber/:id",
+        "destination": "/evaluation.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

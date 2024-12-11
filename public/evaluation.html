@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aldous | Tu profesor virtual por WhatsApp</title>
+    <style>
+        /* Font Faces */
+        @font-face {
+            font-family: 'IntroScript';
+            src: url('fonts/IntroScript/IntroScript-Trial-Black.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Mont';
+            src: url('fonts/Mont/Mont-Regular.woff2') format('woff2'),
+                url('fonts/Mont/Mont-Regular.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Mont';
+            src: url('fonts/Mont/Mont-Bold.woff2') format('woff2'),
+                url('fonts/Mont/Mont-Bold.woff') format('woff');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* Root Variables & Base Styles */
+        :root {
+            --primary: #25D366;
+            --dark: #075E54;
+            --light: #DCF8C6;
+            --white: #ffffff;
+            --accent: #ff4444;
+            --error: #ff4444;
+            --desktop-padding: max(20px, min(8vw, 50px));
+            --mobile-padding: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Mont', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            background-color: var(--light);
+        }
+
+        /* Evaluation Styles */
+        .evaluation-section {
+            padding: var(--desktop-padding);
+            background: linear-gradient(to bottom, var(--white), var(--light));
+        }
+        
+        .section-title {
+            font-size: clamp(36px, 8vw, 80px);
+            font-weight: 900;
+            color: var(--dark);
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            padding: 0 20px;
+        }
+
+        .section-description {
+            font-size: clamp(16px, 2.5vw, 20px);
+            color: var(--dark);
+            opacity: 0.8;
+            text-align: center;
+            max-width: min(600px, 90%);
+            margin: 0 auto 50px;
+            padding: 0 20px;
+        }
+
+        .evaluation-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .evaluation-container .question-card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .evaluation-container .question-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .evaluation-container .question-card.error {
+            border: 2px solid var(--error);
+            animation: shake 0.5s ease-in-out;
+            background-color: rgba(255, 68, 68, 0.1);
+        }
+        
+        .evaluation-container .question-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+        
+        .evaluation-container .options-container {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .evaluation-container .option-label {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: var(--light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .evaluation-container .option-label:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+        
+        .evaluation-container input[type="radio"] {
+            margin-right: 15px;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+        }
+        
+        .evaluation-container .result-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border-left: 5px solid;
+        }
+        
+        .evaluation-container .result-card.correct {
+            border-color: var(--primary);
+            background: rgba(37, 211, 102, 0.1);
+        }
+        
+        .evaluation-container .result-card.incorrect {
+            border-color: var(--accent);
+            background: rgba(255, 68, 68, 0.1);
+        }
+        
+        .evaluation-container .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .evaluation-container .result-icon {
+            font-size: 24px;
+        }
+        
+        .evaluation-container .explanation {
+            font-size: 14px;
+            color: var(--dark);
+            opacity: 0.8;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .whatsapp-btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            height: clamp(50px, 10vw, 80px);
+            padding: 0 clamp(20px, 5vw, 50px);
+            font-size: clamp(18px, 4vw, 30px);
+            font-weight: 800;
+            gap: 15px;
+            max-width: min(400px, 90%);
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .whatsapp-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #evaluation-form .whatsapp-btn {
+            margin-top: 40px;
+        }
+
+        #evaluation-results {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .score-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .score-container h3 {
+            font-size: 24px;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+
+        .score-display {
+            font-size: 48px;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        #evaluation-results .whatsapp-btn {
+            margin-top: 30px;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .error-message.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <section class="evaluation-section">
+        <h2 class="section-title">Práctica Personalizada</h2>
+        <p class="section-description">¡Pon a prueba tus conocimientos con estas preguntas y evalúa tu comprensión!</p>
+        
+        <div class="evaluation-container">
+            <form id="evaluation-form">
+                <div id="questions-container"></div>
+                <button type="submit" class="whatsapp-btn">
+                    Entregar 📝
+                </button>
+            </form>
+    
+            <div id="evaluation-results">
+                <div class="score-container">
+                    <h3>Resultados</h3>
+                    <div class="score-display">
+                        <span id="score">0</span>/10
+                    </div>
+                </div>
+                <div id="detailed-results"></div>
+                <button onclick="resetEvaluation()" class="whatsapp-btn">
+                    Intenta de Nuevo 🔄
+                </button>
+            </div>
+        </div>
+    </section>
+
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+ 
+        const firebaseConfig = {
+        apiKey: "AIzaSyA85p1Cu56kEFGyHavffgak1RWS3j43If4",
+        authDomain: "colegios-fc58b.firebaseapp.com",
+        databaseURL: "https://colegios-fc58b-default-rtdb.firebaseio.com",
+        projectId: "colegios-fc58b",
+        storageBucket: "colegios-fc58b.firebasestorage.app",
+        messagingSenderId: "256566314835",
+        appId: "1:256566314835:web:1b46dd920748e5272f03a6",
+        measurementId: "G-25Z7HKXE1H"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function getDatabasePathFromUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                const segments = urlObj.pathname.split('/').filter(segment => segment);
+                
+                if (segments[0] !== 'evaluation' || segments.length !== 3) {
+                    throw new Error('Invalid evaluation URL format');
+                }
+                
+                const [_, phoneNumber, evaluationId] = segments;
+                return `users/${phoneNumber}/evaluations/${evaluationId}`;
+            } catch (error) {
+                console.error('Error parsing URL:', error);
+                return null;
+            }
+        }
+
+        async function readDataOnce(path) {
+            const dbRef = ref(database);
+            try {
+                const snapshot = await get(child(dbRef, path));
+                if (snapshot.exists()) {
+                    console.log('Data retrieved:', snapshot.val());
+                    return snapshot.val();
+                } else {
+                    console.log('No data available');
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error reading data:', error);
+                return null;
+            }
+        }
+
+        // Initialize global evaluationData
+        window.evaluationData = null;
+
+        // Create a function to initialize everything
+        async function initializeEvaluation() {
+            const currentUrl = window.location.href;
+            const dbPath = getDatabasePathFromUrl(currentUrl);
+            
+            if (!dbPath) {
+                console.error('Invalid evaluation URL');
+                return;
+            }
+            
+            window.evaluationData = await readDataOnce(dbPath);
+            if (window.evaluationData) {
+                window.generateEvaluation();
+            } else {
+                console.error('Failed to load evaluation data');
+            }
+        }
+
+        window.generateEvaluation = function() {
+            const container = document.getElementById('questions-container');
+            if (!window.evaluationData || !window.evaluationData.questions) {
+                console.error('Evaluation data not loaded yet');
+                return;
+            }
+            
+            container.innerHTML = window.evaluationData.questions.map(q => `
+                <div class="question-card">
+                    <p class="question-text">${q.id}. ${q.question}</p>
+                    <div class="options-container">
+                        ${Object.entries(q.options).map(([key, value]) => `
+                            <label class="option-label">
+                                <input type="radio" name="q${q.id}" value="${key}" required>
+                                ${value}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.checkAnswers = function(e) {
+            e.preventDefault();
+            
+            // Remove existing error states
+            document.querySelectorAll('.question-card').forEach(card => {
+                card.classList.remove('error');
+            });
+            
+            // Check if all questions are answered
+            const unansweredQuestions = [];
+            window.evaluationData.questions.forEach(q => {
+                const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+                if (!selected) {
+                    unansweredQuestions.push(q.id);
+                }
+            });
+
+            if (unansweredQuestions.length > 0) {
+                unansweredQuestions.forEach(qId => {
+                    const questionCard = document.querySelector(`input[name="q${qId}"]`).closest('.question-card');
+                    questionCard.classList.add('error');
+                });
+
+                const firstUnanswered = document.querySelector(`input[name="q${unansweredQuestions[0]}"]`).closest('.question-card');
+                firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                let errorMessage = document.querySelector('.error-message');
+                if (!errorMessage) {
+                    errorMessage = document.createElement('div');
+                    errorMessage.className = 'error-message';
+                    document.querySelector('#evaluation-form').insertBefore(errorMessage, document.querySelector('#evaluation-form .whatsapp-btn'));
+                }
+                errorMessage.textContent = `Por favor, responde todas las preguntas (${unansweredQuestions.length} sin responder)`;
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            let score = 0;
+            let resultsHTML = '';
+
+            window.evaluationData.questions.forEach(q => {
+                const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+                const isCorrect = selected.value === q.correct;
+                if (isCorrect) score++;
+
+                resultsHTML += `
+                    <div class="result-card ${isCorrect ? 'correct' : 'incorrect'}">
+                        <div class="result-header">
+                            <span class="result-icon">${isCorrect ? '✓' : '✗'}</span>
+                            <strong>Pregunta ${q.id}:</strong>
+                        </div>
+                        <div>${q.question}</div>
+                        <div>Tu Respuesta: ${q.options[selected.value]}</div>
+                        <div>Respuesta Correcta: ${q.options[q.correct]}</div>
+                        <div class="explanation">${q.explanation}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('detailed-results').innerHTML = resultsHTML;
+            document.getElementById('evaluation-form').style.display = 'none';
+            document.getElementById('evaluation-results').style.display = 'block';
+        };
+
+        window.resetEvaluation = function() {
+            document.getElementById('evaluation-form').reset();
+            document.getElementById('evaluation-form').style.display = 'block';
+            document.getElementById('evaluation-results').style.display = 'none';
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeEvaluation);
+        
+        // Add event listeners after making sure the functions are available globally
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('evaluation-form').addEventListener('submit', window.checkAnswers);
+        });
+    </script>
+</body>
+</html>
