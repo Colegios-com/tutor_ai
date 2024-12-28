@@ -12,3 +12,5 @@ class Message(BaseModel):
     context: Optional[str] = None
     media_id: Optional[str] = None
     media_content: Optional[str] = None
+    tokens:int = 0
+    timestamp: float

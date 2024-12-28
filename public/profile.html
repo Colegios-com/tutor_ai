@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aldous | Tu profesor virtual por WhatsApp</title>
+    <style>
+        :root {
+            --primary: #25D366;
+            --dark: #075E54;
+            --light: #DCF8C6;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--light);
+            font-family: sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .section-subtitle {
+            font-size: clamp(14px, 2vw, 18px);
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: clamp(36px, 8vw, 80px);
+            font-weight: 900;
+            color: var(--dark);
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            padding: 0 20px;
+        }
+
+        .section-description {
+            font-size: clamp(16px, 2.5vw, 20px);
+            color: var(--dark);
+            opacity: 0.8;
+            text-align: center;
+            max-width: min(600px, 90%);
+            margin: 0 auto 50px;
+            padding: 0 20px;
+        }
+
+        .whatsapp-btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            height: clamp(50px, 10vw, 80px);
+            padding: 0 clamp(20px, 5vw, 50px);
+            font-size: clamp(18px, 4vw, 30px);
+            font-weight: 800;
+            gap: 15px;
+            max-width: min(400px, 90%);
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .whatsapp-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .profile {
+            padding: max(20px, min(8vw, 50px));
+            background: linear-gradient(to bottom, var(--white), var(--light));
+        }
+
+        .profile-form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .form-field {
+            margin-bottom: 25px;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .required-field::after {
+            content: " *";
+            font-size: 14px;
+            color: #ff8f8f;
+        }
+
+        .required-notice {
+            font-size: 14px;
+            color: #ff8f8f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid var(--light);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .form-field textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        .checkbox-wrapper label {
+            margin: 0;
+            font-weight: normal;
+        }
+
+        footer {
+            background: var(--light);
+            padding: max(20px, min(8vw, 50px));
+            width: 100%;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 50px;
+        }
+
+        .footer-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .footer-column h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .footer-logo {
+            font-size: 30px;
+            font-weight: 900;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .footer-brand a:not(.footer-logo) {
+            font-size: 25px;
+            font-weight: 700;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        @media (max-width: 900px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 30px;
+                padding: 0 20px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 30px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .profile-form {
+                padding: 20px;
+            }
+
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="profile">
+        <div class="section-subtitle">Perfil</div>
+        <div class="section-title">Cuéntanos Sobre Ti</div>
+        <div class="section-description">Completa tu información para comenzar</div>
+        <div class="profile-form"></div>
+    </section>
+
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <a href="#" class="footer-logo">🖍️ colegios.com</a>
+                <a href="mailto:enrique@colegios.com">enrique@colegios.com</a>
+                <a href="https://wa.me/16466219257">+1 (646) 621 9257</a>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h3>Ayuda</h3>
+                    <a href="#">FAQs</a>
+                    <a href="#">Tutoriales</a>
+                    <a href="#">Tips</a>
+                </div>
+                <div class="footer-column">
+                    <h3>Empresa</h3>
+                    <a href="#">Sobre Nosotros</a>
+                    <a href="#">Sistema Educativo Finlandés</a>
+                    <a href="#">Becas</a>
+                </div>
+                <div class="footer-column">
+                    <h3>Legal</h3>
+                    <a href="#">Términos y Condiciones</a>
+                    <a href="#">Política de Privacidad</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+    
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8l6OGrYpQCukAGuwUacdaBQ023eZNvKk",
+            authDomain: "colegios-tutor.firebaseapp.com",
+            databaseURL: "https://colegios-tutor-default-rtdb.firebaseio.com",
+            projectId: "colegios-tutor",
+            storageBucket: "colegios-tutor.firebasestorage.app",
+            messagingSenderId: "625155574256",
+            appId: "1:625155574256:web:8d5f6520468bc1ab1ef535"
+        };
+    
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+    
+        function getPhoneNumberFromUrl() {
+            const pathSegments = window.location.pathname.split('/');
+            return pathSegments[pathSegments.indexOf('profile') + 1];
+        }
+    
+        const fields = [
+            {
+                id: 'nombre',
+                label: 'Nombre',
+                type: 'text',
+                placeholder: 'Ingresa tu nombre',
+                required: true
+            },
+            {
+                id: 'email',
+                label: 'Correo Electrónico', 
+                type: 'email',
+                placeholder: 'Ingresa tu correo',
+                required: true
+            },
+            {
+                id: 'pais',
+                label: 'País',
+                type: 'select',
+                options: ['Argentina', 'Bolivia', 'Chile', 'Colombia', 'Costa Rica', 'Cuba', 'Ecuador', 'El Salvador', 'Guatemala', 'Honduras', 'México', 'Nicaragua', 'Panamá', 'Paraguay', 'Perú', 'República Dominicana', 'Uruguay', 'Venezuela'],
+                required: true
+            },
+            {
+                id: 'colegio',
+                label: 'Colegio',
+                type: 'text',
+                placeholder: 'Nombre de tu colegio',
+                required: true
+            },
+            {
+                id: 'grado',
+                label: 'Grado',
+                type: 'select',
+                options: ['Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo', 'Onceavo', 'Doceavo'],
+                required: true
+            },
+            {
+                id: 'materias',
+                label: 'Materias Favoritas',
+                type: 'checkbox',
+                options: ['Matemática', 'Ciencias', 'Inglés', 'Historia', 'Literatura', 'Física', 'Química', 'Biología', 'Computación'],
+                required: false
+            },
+            {
+                id: 'promedio',
+                label: 'Promedio General',
+                type: 'number',
+                placeholder: 'Ingresa tu promedio (0-100)',
+                min: 0,
+                max: 100,
+                required: true
+            },
+            {
+                id: 'autoevaluacion',
+                label: 'Autoevaluación de Desempeño',
+                type: 'select',
+                options: ['Excelente', 'Muy Bueno', 'Bueno', 'Regular', 'Necesito Mejorar'],
+                required: true
+            },
+            {
+                id: 'comentarios',
+                label: 'Comentarios Adicionales',
+                type: 'textarea',
+                placeholder: 'Comparte tus comentarios sobre tu desempeño académico',
+                required: false
+            }
+        ];
+    
+        const form = document.createElement('form');
+        form.id = 'profileForm';
+    
+        fields.forEach(field => {
+            const fieldContainer = document.createElement('div');
+            fieldContainer.className = 'form-field';
+    
+            const label = document.createElement('label');
+            label.htmlFor = field.id;
+            label.textContent = field.label;
+            if (field.required) {
+                label.className = 'required-field';
+            }
+            fieldContainer.appendChild(label);
+    
+            if (field.type === 'select') {
+                const select = document.createElement('select');
+                select.id = field.id;
+                select.name = field.id;
+                select.required = field.required;
+    
+                field.options.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.textContent = option;
+                    select.appendChild(opt);
+                });
+    
+                fieldContainer.appendChild(select);
+            } 
+            else if (field.type === 'checkbox') {
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'checkbox-group';
+    
+                field.options.forEach(option => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'checkbox-wrapper';
+    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `${field.id}_${option}`;
+                    checkbox.name = field.id;
+                    checkbox.value = option;
+    
+                    const checkboxLabel = document.createElement('label');
+                    checkboxLabel.htmlFor = `${field.id}_${option}`;
+                    checkboxLabel.textContent = option;
+    
+                    wrapper.appendChild(checkbox);
+                    wrapper.appendChild(checkboxLabel);
+                    checkboxContainer.appendChild(wrapper);
+                });
+    
+                fieldContainer.appendChild(checkboxContainer);
+            }
+            else if (field.type === 'textarea') {
+                const textarea = document.createElement('textarea');
+                textarea.id = field.id;
+                textarea.name = field.id;
+                textarea.placeholder = field.placeholder;
+                textarea.required = field.required;
+                fieldContainer.appendChild(textarea);
+            }
+            else {
+                const input = document.createElement('input');
+                input.type = field.type;
+                input.id = field.id;
+                input.name = field.id;
+                input.placeholder = field.placeholder;
+                input.required = field.required;
+                if (field.min !== undefined) input.min = field.min;
+                if (field.max !== undefined) input.max = field.max;
+                fieldContainer.appendChild(input);
+            }
+    
+            form.appendChild(fieldContainer);
+        });
+    
+        const submitBtn = document.createElement('button');
+        submitBtn.type = 'submit';
+        submitBtn.id = 'submitBtn';
+        submitBtn.className = 'whatsapp-btn';
+        submitBtn.textContent = 'Guardar Perfil';
+        form.appendChild(submitBtn);
+    
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.querySelector('.profile-form').appendChild(form);
+            
+            const phoneNumber = getPhoneNumberFromUrl();
+            if (phoneNumber) {
+                try {
+                    const profileRef = ref(database, `users/${phoneNumber}/profile`);
+                    const snapshot = await get(profileRef);
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        Object.keys(data).forEach(key => {
+                            const element = document.getElementById(key);
+                            if (element) {
+                                if (element.type === 'checkbox') {
+                                    element.checked = data[key];
+                                } else {
+                                    element.value = data[key];
+                                }
+                            }
+                            
+                            if (key === 'materias') {
+                                data[key].forEach(subject => {
+                                    const checkbox = document.getElementById(`materias_${subject}`);
+                                    if (checkbox) checkbox.checked = true;
+                                });
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                }
+            }
+    
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!phoneNumber) {
+                    console.error('Phone number not found in URL');
+                    return;
+                }
+    
+                const formData = new FormData(form);
+                const profileData = {
+                    nombre: formData.get('nombre'),
+                    email: formData.get('email'),
+                    pais: formData.get('pais'),
+                    colegio: formData.get('colegio'),
+                    grado: formData.get('grado'),
+                    promedio: formData.get('promedio'),
+                    autoevaluacion: formData.get('autoevaluacion'),
+                    comentarios: formData.get('comentarios'),
+                    materias: []
+                };
+    
+                document.querySelectorAll('input[name="materias"]:checked').forEach(checkbox => {
+                    profileData.materias.push(checkbox.value);
+                });
+    
+                try {
+                    const profileRef = ref(database, `users/${phoneNumber}/profile`);
+                    await set(profileRef, profileData);
+                    
+                    const submitBtn = document.getElementById('submitBtn');
+                    submitBtn.textContent = 'Perfil Guardado';
+                    setTimeout(() => {
+                        submitBtn.textContent = 'Guardar Perfil';
+                    }, 3000);
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    alert('Error al actualizar el perfil. Por favor intenta nuevamente.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

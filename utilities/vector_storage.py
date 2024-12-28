@@ -5,7 +5,7 @@ import uuid
 import time
 
 
-collection = chroma_client.get_or_create_collection(name='colegios_tutor', metadata={'hnsw:space': 'cosine'})
+collection = chroma_client.get_or_create_collection(name='colegios-ai', metadata={'hnsw:space': 'cosine'})
 
 
 def save_vectors(metadata: dict, data: list, embeddings: list, identifier: str = None):

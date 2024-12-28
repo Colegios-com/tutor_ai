@@ -1,6 +1,5 @@
 from firebase_admin import db
 
-test = False
 
 def save_data(url, payload):
     '''
@@ -9,24 +8,27 @@ def save_data(url, payload):
     :param phone_number: str, the user's phone number
     :param message_dict: dict, the message to be saved
     '''
-    if test:
-        url = f'test/{url}'
-        print('Test Mode')
+
     ref = db.reference(url)
     ref.set(payload)
 
 
-def get_data(url):
+def get_data(url, order_by=None, limit=None):
     '''
-    Retrieve all messages for a user identified by their phone number.
+    Retrieve messages for a user with ordering options.
     
-    :param phone_number: str, the user's phone number
+    :param url: str, the database path
+    :param order_by: str, field to order by (default: 'timestamp')
+    :param limit: int, limit number of results (optional)
     :return: list of dictionaries, each representing a message
     '''
-    if test:
-        url = f'test/{url}'
-        print('Test Mode')
+    
     ref = db.reference(url)
+    if order_by:
+        ref = ref.order_by_child(order_by)
+    if limit:
+        ref = ref.limit_to_last(limit)
+    
     return ref.get()
 
 
@@ -37,9 +39,7 @@ def update_data(url, payload):
     :param phone_number: str, the user's phone number
     :param message_dict: dict, the message to be updated
     '''
-    if test:
-        url = f'test/{url}'
-        print('Test Mode')
+
     ref = db.reference(url)
     ref.update(payload)
 
@@ -50,8 +50,6 @@ def delete_data(url):
     
     :param phone_number: str, the user's phone number
     '''
-    if test:
-        url = f'test/{url}'
-        print('Test Mode')
+
     ref = db.reference(url)
     ref.delete()

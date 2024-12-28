@@ -7,4 +7,6 @@ gunicorn
 json_repair
 openai
 PyJWT
+pypdf
+python-docx
 requests

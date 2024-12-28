@@ -10,23 +10,47 @@ image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
 text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
 
 
-def initialize_tutor_workflow(message: Message, debug=False) -> str:
-    messages = get_data(f'users/{message.phone_number}/messages')
-    previous_message = ''
-    if messages:
-        _, value = messages.popitem()
-        previous_message = f'Previous Message: {value["text"]}'
+def initialize_tutor_workflow(user_message: Message, debug=False) -> str:
+    # Retrieve user profile information
+    user_profile = ''
+    profile_data = get_data(f'users/{user_message.phone_number}/profile')
+    if profile_data:
+        user_profile = f"The student's profile is as follows: {profile_data}"
+        print(user_profile)
 
-    direct_context = ''
-    if message.context:
-        context = get_data(f'users/{message.phone_number}/messages/{message.context.replace('wamid.', '')}')
-        if context:
-            direct_context = f'Direct Context: {context["text"]}'
-    
-    memories = query_vectors(data=message.text, user=message.phone_number)
+    # Retrieve context information
+    context_text = ''
+    context_content = ''
+    if user_message.context:
+        context_data = get_data(f'users/{user_message.phone_number}/messages/{user_message.context.replace("wamid.", "")}')
+        if context_data:
+            context_text = f'The student is directly referencing this message: {context_data['text']}'
+            print(context_text)
+            if context_data['message_type'] == 'document' and context_data['media_content']:
+                context_content = f'This document is attached to the message the student is directly referencing: {context_data['media_content']}'
+                print(context_content)
+
+    # Retrieve previous message if no context is provided
+    previous_message = ''
+    if not context_text:
+        previous_messages = get_data(f'users/{user_message.phone_number}/messages', order_by='timestamp', limit=1)
+        if previous_messages:
+            _, previous_message_data = previous_messages.popitem()
+            previous_message = f'This is the last message sent: {previous_message_data['text']}'
+            print(previous_message)
+
+    # Retrieve relevant memories
     relevant_memories = ''
-    if memories:
-        relevant_memories = f'Relevant Memories: {memories}'
+    memories_data = query_vectors(data=user_message.text, user=user_message.phone_number)
+    if memories_data:
+        relevant_memories = f'These memories are relevant to the student\'s current message: {memories_data}'
+        print(relevant_memories)
+
+    # Retrieve file content
+    file_content = ''
+    if user_message.message_type == 'document' and user_message.media_content:
+        file_content = f'The student has attached this document to their message: {user_message.media_content}'
+        print(file_content)
 
     system_message = f'''
         # PURPOSE
@@ -59,32 +83,36 @@ def initialize_tutor_workflow(message: Message, debug=False) -> str:
         2. Provide guidance, feedback, or instruction.
         3. Encourage further engagement.
         4. Ensure the response is tailored to the user's needs.
-        5. Respond in the answer of the current message.
 
         # FORMAT
-        1. Respond in markdown format.
-        2. Do not use LaTeX formatting.
+        1. The response must be in the language of the user's latest message.
+        1. Respond using WhatsApp formatting guidelines.
+        2. You must never use LaTeX/MathJax mathematical notation syntax/formatting. Instead use plain text.
 
-        {"# IMPORTANT: Always structure your response in two sections: ANSWER and LOGICAL ANALYSIS." if debug else ''}
+        {'# IMPORTANT: Always structure your response in two sections: ANSWER and LOGICAL ANALYSIS.' if debug else ''}
 
         # INTERACTION
-        Current Message: {message.text}
-        {direct_context}
+        This is the student's latest message: {user_message.text}
+        {context_text}
+        {context_content}
         {previous_message}
+        {file_content}
         {relevant_memories}
+        {user_profile}
     '''
 
     model = text_model
     content = [{'type': 'text', 'text': system_message}]
 
-    if message.media_content:
+    if user_message.media_content and user_message.message_type == 'image':
         model = image_model
-        content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{message.media_content}'}})
+        content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
 
     response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': content}])
 
-    print('TOTAL TOKENS')
-    print(response.usage.total_tokens)
+    print('TOTAL TUTOR TOKENS')
+    user_message.tokens += response.usage.total_tokens
+    print(user_message.tokens)
 
     return response.choices[0].message.content
 

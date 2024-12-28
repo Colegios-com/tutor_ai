@@ -11,16 +11,19 @@ image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
 text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
 
 
-def initialize_memory_workflow(message: Message, response: Message) -> str:
-    message_url = f'users/{message.phone_number}/messages/{message.id.replace('wamid.', '')}'
-    response_url = f'users/{message.phone_number}/messages/{response.id.replace('wamid.', '')}'
-    save_data(message_url, message.dict())
-    save_data(response_url, response.dict())
-    
-    context = query_vectors(data=message.text, user=message.phone_number)
-    relevant_context = ''
-    if context:
-        relevant_context = f'Relevant Context: {context}'
+def initialize_memory_workflow(user_message: Message, response_message: Message) -> str:    
+    # Retrieve relevant memories
+    relevant_memories = ''
+    memories_data = query_vectors(data=user_message.text, user=user_message.phone_number)
+    if memories_data:
+        relevant_memories = f'These memories are relevant to the student\'s current message: {memories_data}'
+        print(relevant_memories)
+
+    # Retrieve file content
+    file_content = ''
+    if user_message.message_type == 'document' and user_message.media_content:
+        file_content = f'The student has attached this document to their message: {user_message.media_content}'
+        print(file_content)
     
     system_message = f'''
         # PURPOSE
@@ -49,27 +52,38 @@ def initialize_memory_workflow(message: Message, response: Message) -> str:
         Response must be in this format: # TYPE ## CONTENT ### CONTEXT
 
         # IMPORTANT
-        1. Include only the MOST actionable insight
-        2. Must influence future teaching
+        - Include only the MOST actionable insight
+        - Must influence future teaching
+        - The insight must be in the language of the interaction
 
         # INTERACTION
-        User Message: {message.text}
-        Tutor Response: {response.text}
-        {relevant_context}
+        This is the student's latest message: {user_message.text}
+        {file_content}
+        This is the tutor's response message: {response_message.text}
+        {relevant_memories}
     '''
 
     model = text_model
     content = [{'type': 'text', 'text': system_message}]
 
-    if message.media_content:
+    if user_message.media_content and user_message.message_type == 'image':
         model = image_model
-        content.append({'type': 'image_url', 'image_url': {'url': f"data:image/jpeg;base64,{message.media_content}"}})
+        content.append({'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
 
     response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': content}])
 
+    print('TOTAL MEMORY TOKENS')
+    user_message.tokens += response.usage.total_tokens
+    print(user_message.tokens)
+
     memory = response.choices[0].message.content
     embeddings = embed_data([memory])
-    metadata = {'user': message.phone_number, 'context_type': 'general'}
-    if message.media_id:
-        metadata['media_id'] = message.media_id
+    metadata = {'user': user_message.phone_number, 'context_type': 'general'}
+    if user_message.media_id:
+        metadata['media_id'] = user_message.media_id
     save_vectors(metadata=metadata, data=[memory], embeddings=embeddings)
+
+    message_url = f'users/{user_message.phone_number}/messages/{user_message.id.replace('wamid.', '')}'
+    response_url = f'users/{user_message.phone_number}/messages/{response_message.id.replace('wamid.', '')}'
+    save_data(message_url, user_message.dict())
+    save_data(response_url, response_message.dict())

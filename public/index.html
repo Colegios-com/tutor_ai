@@ -983,23 +983,17 @@
                 <div class="iphone-mockup">
                     <div class="iphone-notch"></div>
                     <div class="iphone-screen">
-                        <video class="demo-video active" data-feature="text" autoplay loop muted playsinline>
-                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        <video class="demo-video active" data-feature="text" data-src="videos/textSupport.mp4" autoplay loop muted playsinline>
                         </video>
-                        <video class="demo-video" data-feature="image" autoplay loop muted playsinline>
-                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="image" data-src="videos/imageSupport.mp4" autoplay loop muted playsinline>
                         </video>
-                        <video class="demo-video" data-feature="voice" autoplay loop muted playsinline>
-                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="voice" data-src="videos/voiceSupport.mp4" autoplay loop muted playsinline>
                         </video>
-                        <video class="demo-video" data-feature="chat" autoplay loop muted playsinline>
-                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="chat" data-src="videos/naturalLanguageSupport.mp4" autoplay loop muted playsinline>
                         </video>
-                        <video class="demo-video" data-feature="quiz" autoplay loop muted playsinline>
-                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="quiz" data-src="videos/textSupport.mp4" autoplay loop muted playsinline>
                         </video>
-                        <video class="demo-video" data-feature="progress" autoplay loop muted playsinline>
-                            <source src="videos/textSupport.mp4" type="video/mp4">
+                        <video class="demo-video" data-feature="progress" data-src="videos/textSupport.mp4" autoplay loop muted playsinline>
                         </video>
                     </div>
                 </div>
@@ -1338,8 +1332,8 @@
         <div class="footer-content">
             <div class="footer-brand">
                 <a href="#" class="footer-logo">🖍️ colegios.com</a>
-                <a href="mailto:ayuda@colegios.com">ayuda@colegios.com</a>
-                <a href="tel:+50253144545">+502 5314 4545</a>
+                <a href="mailto:enrique@colegios.com">enrique@colegios.com</a>
+                <a href="https://wa.me/16466219257">+1 (646) 621 9257</a>
             </div>
             <div class="footer-links">
                 <div class="footer-column">
@@ -1429,20 +1423,47 @@
                 document.querySelectorAll('.demo-video').forEach(video => {
                     if (video.dataset.feature === featureId) {
                         video.classList.add('active');
+                        loadVideo(video);
                     } else {
                         video.classList.remove('active');
+                        unloadVideo(video);
                     }
                 });
             });
         });
 
+        function loadVideo(videoElement) {
+            if (!videoElement.querySelector('source')) {
+                const source = document.createElement('source');
+                source.src = videoElement.dataset.src;
+                source.type = 'video/mp4';
+                videoElement.appendChild(source);
+                videoElement.load();
+                videoElement.play();
+            }
+        }
+
+        function unloadVideo(videoElement) {
+            videoElement.pause();
+            videoElement.innerHTML = '';
+            videoElement.load();
+        }
+
+        function loadActiveVideo() {
+            const activeVideo = document.querySelector('.demo-video.active');
+            if (activeVideo) {
+                loadVideo(activeVideo);
+            }
+        }
+
         document.getElementById('whitepaperForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const email = this.querySelector('input[type="email"]').value;
-            // Here you would typically send the email to your server
             alert('¡Gracias! El whitepaper será enviado a ' + email);
             this.reset();
         });
+
+        document.addEventListener('DOMContentLoaded', loadActiveVideo);
     </script>
 </body>
 </html>

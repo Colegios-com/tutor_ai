@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/profile/:phoneNumber",
+        "destination": "/profile.html"
+      },
+      {
         "source": "/evaluation/:phoneNumber/:id",
         "destination": "/evaluation.html"
       },

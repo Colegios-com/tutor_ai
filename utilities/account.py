@@ -25,10 +25,12 @@ def save_user(payload: dict):
     # Build subscription data
     transaction_id = payload['id']
     product_id = payload['product']['id']
-    if product_id == 'abc_123':
+    if product_id == 'prod_ecwiiv15':
         product_type = 'ultimate'
-    elif product_id == 'xyz_123':
-        product_type = 'boster'
+    elif product_id == 'prod_tbeeo1vt':
+        product_type = 'ultimate'
+    elif product_id == 'prod_u6dhzm0z':
+        product_type = 'tester'
     else:
         product_type = 'starter'
 

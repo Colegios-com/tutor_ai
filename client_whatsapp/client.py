@@ -1,5 +1,7 @@
 from init.openai import openai_client
 
+from io import BytesIO
+
 import requests
 import base64
 import json
@@ -8,10 +10,6 @@ import json
 class WhatsappClient:
     def __init__(self, key):
         self.key = key
-
-    # Webhooks. ID is tied to phone number (API Setup in Developer Portal). Generate temporary Access Token.
-    # Removed all extra apps from the Facebook Developer Portal. Only one app is needed.
-    # Independent from Webhook in Configuration.
 
 
     def list_webhooks(self):        
@@ -64,7 +62,7 @@ class WhatsappClient:
             return f'Error making request: {e}'
     
 
-    def send_reaction(self, message, reaction):
+    def send_reaction(self, user_message, reaction):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -74,16 +72,16 @@ class WhatsappClient:
             payload = {
                 'messaging_product': 'whatsapp',
                 'recipient_type': 'individual',
-                'to': message.phone_number,
+                'to': user_message.phone_number,
                 'type': 'reaction',
                 'reaction': {
-                    'message_id': message.id,
+                    'message_id': user_message.id,
                     'emoji': reaction
                 }
             }
 
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages', 
+                f'https://graph.facebook.com/v21.0/{user_message.phone_number_id}/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
@@ -140,7 +138,7 @@ class WhatsappClient:
             return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
 
 
-    def send_message(self, message):
+    def send_message(self, response_message):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -149,14 +147,14 @@ class WhatsappClient:
 
             payload = {
                 'messaging_product': 'whatsapp',
-                'to': message.phone_number,
+                'to': response_message.phone_number,
                 'type': 'text',
                 'text': {
-                    'body': message.text,
+                    'body': response_message.text,
                 }
             }
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages', 
+                f'https://graph.facebook.com/v21.0/{response_message.phone_number_id}/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
@@ -216,16 +214,16 @@ class WhatsappClient:
 
     def upload_media(self, message, analysis_text):
         try:
-            with open('analisis_semanal.txt', 'w', encoding='utf-8') as f:
-                f.write(analysis_text)
-
+            # Create a BytesIO object instead of a file
+            text_bytes = BytesIO(analysis_text.encode('utf-8'))
+            
             headers = {
                 'Authorization': f'Bearer {self.key}'
             }
 
             files = {
-            'file': ('analisis_semanal.txt', open('analisis_semanal.txt', 'rb'), 'text/plain')
-        }
+                'file': ('analisis_semanal.txt', text_bytes, 'text/plain')
+            }
 
             response = requests.post(
                 f'https://graph.facebook.com/v21.0/{message.phone_number_id}/media',
@@ -241,7 +239,7 @@ class WhatsappClient:
                 media_data = response.json()
                 return media_data['id']
             else:
-                raise Exception(f"Upload failed: {response.text}")
+                raise Exception(f'Upload failed: {response.text}')
 
         except Exception as e:
             return {'status': False, 'message': f'Error uploading analysis: {e}'}
@@ -275,7 +273,7 @@ class WhatsappClient:
             if response.status_code == 200:
                 return response.json()
             else:
-                raise Exception(f"Send failed: {response.text}")
+                raise Exception(f'Send failed: {response.text}')
 
         except Exception as e:
             return {'status': False, 'message': f'Error sending document: {e}'}
