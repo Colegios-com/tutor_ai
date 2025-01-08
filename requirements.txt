@@ -10,3 +10,4 @@ PyJWT
 pypdf
 python-docx
 requests
+sendgrid

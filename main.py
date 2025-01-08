@@ -87,10 +87,10 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     # Pro Commands
     elif user_message.message_type == '/guia' and subscription_type in ['pro', 'unlimited', 'tester']:
         guide_text = initialize_guide_workflow(user_message=user_message)
-        media_id = whatsapp_client.upload_media(message=user_message, file_content=guide_text, file_name='guia.txt', file_type='text/plain')
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=guide_text, file_name='guiaDeEstudio.md', file_type='text/plain')
         raw_response = 'Claro! Aquí tienes tu guía de estudio. 📚'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=guide_text)
-        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='guia.txt', file_type='document')
+        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='guiaDeEstudio.md', file_type='document', caption='Aquí está tu guía de estudio personalizada. 💡')
     elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
         evaluation_id = initialize_evaluation_workflow(user_message=user_message)
         raw_response = f'Claro! Aquí tienes tu examen personalizado 📝 \n\nhttps://aldous.colegios.com/evaluation/{user_message.phone_number}/{evaluation_id}'
@@ -99,10 +99,10 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     # Unlimited Commands
     elif user_message.message_type == '/analisis' and subscription_type in ['unlimited', 'tester']:
         analysis_text = initialize_analysis_workflow(user_message=user_message)
-        media_id = whatsapp_client.upload_media(message=user_message, file_content=analysis_text, file_name='analisis.txt', file_type='text/plain')
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=analysis_text, file_name='analisisPersonalizado.md', file_type='text/markdown')
         raw_response = 'Claro! Aquí tienes tu análisis. 📊'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=analysis_text)
-        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='analisis.txt', file_type='document')
+        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='analisisPersonalizado.md', file_type='document', caption='Aquí está tu análisis personalizado. 🧠')
     # Unsupported/Unsuscribed Features
     elif user_message.message_type == 'unsupported':
         raw_response = 'Lo siento, no puedo procesar este tipo de mensaje aún. He tomado nota y trabajaré para agregar soporte en el futuro. 🤖'

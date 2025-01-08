@@ -1,5 +1,30 @@
 from utilities.storage import save_data, get_data
+
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, SendGridException, From
+
+
 from datetime import datetime, timedelta
+import os
+
+
+def send_email(email: str, phone_number: str):
+    sendgrid_key = os.environ.get('SENDGRID_KEY')
+
+    welcomeMessage = Mail(
+        from_email=From('bienvenido@colegios.com', 'Colegios.com'),
+        to_emails=email,
+        subject='Comienza Ahora 📝',
+    )
+    welcomeMessage.template_id = 'd-43fae76bfca747b4bf81f01bf6df01fa'
+    welcomeMessage.dynamic_template_data = {
+        'phone': phone_number,
+    }
+    try:
+        email = SendGridAPIClient(sendgrid_key)
+        email.send(welcomeMessage)
+    except SendGridException as e:
+        print(e)
 
 
 def save_user(payload: dict):
@@ -23,7 +48,7 @@ def save_user(payload: dict):
         subscription_type = 'starter'
 
     # Get or create user
-    url = f'accounts/{email}'
+    url = f'accounts/{customer_id}'
     user = get_data(url)
 
     if not user:
@@ -38,6 +63,8 @@ def save_user(payload: dict):
     subscription_data = {'parent': email, 'subscription_type': subscription_type, 'usage': 0, 'expiry_date': expiry_date}
     url = f'users/{striped_phone_number}/subscriptions/{transaction_id}'
     save_data(url, subscription_data)
+
+    send_email(email=email, phone_number=phone_number)
 
     return phone_number
 

@@ -249,7 +249,7 @@ class WhatsappClient:
             return {'status': False, 'message': f'Error uploading analysis: {e}'}
         
 
-    def send_media(self, message, media_id, file_name, file_type):
+    def send_media(self, message, media_id, file_name, file_type, caption=None):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -276,7 +276,7 @@ class WhatsappClient:
             elif file_type == 'document':
                 payload['document'] = {
                     'id': media_id,
-                    'caption': 'Documento Generado',
+                    'caption': caption,
                     'filename': file_name,
                 }
 

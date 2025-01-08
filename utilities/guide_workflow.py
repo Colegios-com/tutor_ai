@@ -52,72 +52,74 @@ def initialize_guide_workflow(user_message: Message) -> str:
         print(file_content)
 
     system_message = f'''
-        Create a self-paced study guide for a specific topic that strictly follows this format:
+        Create a personalized study guide for a specific topic. The guide should be structured as a learning pathway, with the following sections:
 
-        <STUDY_GUIDE>
+        ## Introduction to the Learning Pathway
+        * Topic: [Topic]
+        * Time Needed: [estimated time required to complete the pathway]
+        * What You Should Already Know: [prerequisites for the topic]
 
-        ## Big Picture
-        - Topic:
-        - Time Needed:
-        - What You Should Already Know:
+        ## Core Objectives
+        * List 3-5 core objectives that I should focus on to master the topic
+        * For each objective, provide:
+            + A brief explanation of the concept
+            + Examples or illustrations to help clarify the concept
+            + Suggestions for how to practice and reinforce my understanding
+        * Optional Side Quests:
+            + List additional activities or topics that I can explore to gain extra knowledge or skills
+            + Provide suggestions for how to incorporate these side quests into my learning pathway
 
-        💡 Need more detail? Ask me:
-        [List of questions to ask for deeper understanding]
+        ## Essential Terms and Concepts
+        * List essential terms and concepts, grouped by core objective
+        * Provide definitions, explanations, and examples for each term or concept
+        * Suggest ways to practice and reinforce my understanding of each term or concept
+        * Bonus Materials:
+            + List additional resources or activities that I can use to deepen my understanding of the topic
+            + Provide suggestions for how to use these bonus materials to support my learning
 
-        ## Key Questions (3-5)
-        [If you can answer these, you understand the topic]
+        ## Study Resources and Tools
+        * List recommended study resources, including:
+            + Main materials (e.g. textbooks, articles, videos)
+            + Practice tools (e.g. quizzes, worksheets, interactive simulations)
+            + Extra help (e.g. online forums, tutoring services)
+        * Provide suggestions for how to use each resource to support my learning
+        * Power-Ups:
+            + List additional tools or resources that I can use to accelerate my learning or overcome challenges
+            + Provide suggestions for how to use these power-ups to support my learning
 
-        💡 Want to explore deeper? Ask me:
-        [List of questions to ask for deeper understanding]
+        ## Tracking Progress and Staying on Track
+        * Provide a progress tracking system, with checkpoints to determine when I can explain each core objective confidently
+        * Offer tips for staying motivated and on track, including:
+            + Common hangups and how to overcome them
+            + Smart strategies for managing time and effort
+            + Time-saving tips and shortcuts
+        * Leveling Up:
+            + Provide suggestions for how to reflect on my progress and adjust my learning pathway as needed
+            + Offer tips for how to celebrate my successes and stay motivated
 
-        ## Must-Know Terms
-        [List of terms grouped by key question]
+        ## Deepening Understanding and Exploring Further
+        * For each section, provide suggestions for questions I can ask to:
+            + Deepen my understanding of the topic
+            + Clarify doubts or misconceptions
+            + Explore related topics or applications
+        * Encourage me to ask questions and seek guidance throughout my journey
+        * Hidden Gems:
+            + List additional topics or activities that I can explore to gain a deeper understanding of the subject
+            + Provide suggestions for how to incorporate these hidden gems into my learning pathway
 
-        💡 Stuck on terms? Ask me:
-        [List of questions to ask for deeper understanding]
+        ## Final Checkpoints and Next Steps
+        * Provide a final set of checkpoints to ensure I have mastered the core objectives and concepts
+        * Offer suggestions for next steps, including:
+            + How to apply my new knowledge and skills
+            + How to continue learning and exploring the topic
+            + How to seek feedback and assessment from others
+        * Graduation:
+            + Provide a final assessment of my progress and mastery of the topic
+            + Offer suggestions for how to celebrate my achievements and reflect on my learning journey
 
-        ## How to Practice
-        [List of quick Win Activities]
-
-        [List of deep Understanding Activities]
-
-        💡 Need practice guidance? Ask me:
-        [List of questions to ask for deeper understanding]
-
-        ## Study Resources
-        ### Main Materials:
-        ### Practice Tools:
-        ### Extra Help:
-
-        💡 Want to optimize your study? Ask me:
-        [List of questions to ask for deeper understanding]
-
-        ## Track Your Progress
-        [List of checkpoints to determine when you can explain each key question confidently]
-
-        💡 Unsure about your progress? Ask me:
-       [List of questions to ask for deeper understanding]
-
-        ## Tips for Success
-        - Common Hangups:
-        - Smart Strategies:
-        - Time-Saving Tips:
-
-        💡 Looking for personalized advice? Ask me:
-        [List of questions to ask for deeper understanding]
-
-        ## Follow-Up Prompts
-        [List of questions to ask me while and after studying]
-
-        </STUDY_GUIDE>
-
-        # IMPORTANT
-        - Present content directly without tags, hints or technical elements
-        - Use clear, standard formatting and headings throughout
-        - Write in the same language as the user's message
-        - Include only educational content relevant to the study topic
-        - Maintain consistent structure between sections
-
+        Please generate the study guide in a standard format, with clear headings and concise language, and adapt the content to match my language and profile. Use only educational content relevant to the study topic, and avoid technical jargon or unnecessary complexity.
+        Note: Please ensure that all headings and section titles are translated to match the language of my request, and that the content is tailored to my specific needs and learning style. The output token count must remain under 3000 tokens.
+        
         # STUDY GUIDE TOPIC
         {user_message.text}
         {context_text}
@@ -134,7 +136,7 @@ def initialize_guide_workflow(user_message: Message) -> str:
         model = image_model
         content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
 
-    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': content}])
+    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': content}], max_tokens=3000)
 
     print('TOTAL GUIDE TOKENS')
     user_message.tokens += response.usage.total_tokens
