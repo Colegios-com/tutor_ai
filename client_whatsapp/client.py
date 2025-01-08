@@ -212,24 +212,26 @@ class WhatsappClient:
             return None
         
 
-    def upload_media(self, message, analysis_text):
+    def upload_media(self, message, file_content, file_name, file_type):
         try:
-            # Create a BytesIO object instead of a file
-            text_bytes = BytesIO(analysis_text.encode('utf-8'))
+            if file_type == 'text/plain':
+                content_bytes = BytesIO(file_content.encode('utf-8'))
+            else:
+                content_bytes = BytesIO(file_content)
             
             headers = {
                 'Authorization': f'Bearer {self.key}'
             }
 
             files = {
-                'file': ('analisis_semanal.txt', text_bytes, 'text/plain')
+                'file': (file_name, content_bytes, file_type)
             }
 
             response = requests.post(
                 f'https://graph.facebook.com/v21.0/{message.phone_number_id}/media',
                 data={
                     'messaging_product': 'whatsapp',
-                    'type': 'text/plain'
+                    'type': file_type
                 },
                 files=files,
                 headers=headers
@@ -239,13 +241,15 @@ class WhatsappClient:
                 media_data = response.json()
                 return media_data['id']
             else:
+                print(f'Upload failed: {response.text}')
                 raise Exception(f'Upload failed: {response.text}')
 
         except Exception as e:
+            print(f'Error uploading analysis: {e}')
             return {'status': False, 'message': f'Error uploading analysis: {e}'}
         
 
-    def send_media(self, message, media_id):
+    def send_media(self, message, media_id, file_name, file_type):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -256,13 +260,25 @@ class WhatsappClient:
                 'messaging_product': 'whatsapp',
                 'recipient_type': 'individual',
                 'to': message.phone_number,
-                'type': 'document',
-                'document': {
-                    'id': media_id,
-                    'caption': 'Análisis Semanal de Rendimiento Académico',
-                    'filename': 'analisis_semanal.txt'
-                }
+                'type': file_type,
             }
+
+            if file_type == 'image':
+                payload['image'] = {
+                    'id': media_id,
+                    'caption': 'Imagen Generado',
+                }
+            elif file_type == 'audio':
+                payload['audio'] = {
+                    'id': media_id,
+                    'caption': 'Audio Generado',
+                }
+            elif file_type == 'document':
+                payload['document'] = {
+                    'id': media_id,
+                    'caption': 'Documento Generado',
+                    'filename': file_name,
+                }
 
             response = requests.post(
                 f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages',

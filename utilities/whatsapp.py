@@ -55,6 +55,10 @@ def build_user_message(payload: dict) -> Message:
                 message_type, _, text = message['text']['body'].partition(' ')
             elif message['text']['body'].startswith('/analisis'):
                 message_type, _, text = message['text']['body'].partition(' ')
+            elif message['text']['body'].startswith('/guia'):
+                message_type, _, text = message['text']['body'].partition(' ')
+            elif message['text']['body'].startswith('/imagen'):
+                message_type, _, text = message['text']['body'].partition(' ')
             elif message['text']['body'].startswith('/examen'):
                 message_type, _, text = message['text']['body'].partition(' ')
             else:
@@ -125,13 +129,15 @@ def build_user_message(payload: dict) -> Message:
         )
 
 
-def build_response_message(user_message: Message, raw_response: str) -> Message:
+def build_response_message(user_message: Message, raw_response: str, message_type: str = 'text', media_id: str = None, media_content: str = None) -> Message:
     return Message(
         id=f'{user_message.id}-r',
         phone_number_id=user_message.phone_number_id,
         sender='agent', 
         phone_number=user_message.phone_number,
-        message_type='text',
+        message_type=message_type,
         text=raw_response,
+        media_id=media_id,
+        media_content=media_content,
         timestamp=time(),
     )

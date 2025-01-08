@@ -6,6 +6,7 @@ import init.firebase
 # Utilities
 from utilities.account import save_user, verify_subscription, verify_access
 from utilities.analysis_workflow import initialize_analysis_workflow
+from utilities.guide_workflow import initialize_guide_workflow
 from utilities.memory_workflow import initialize_memory_workflow
 from utilities.evaluation_workflow import initialize_evaluation_workflow
 from utilities.tutor_workflow import initialize_tutor_workflow
@@ -16,6 +17,7 @@ from fastapi import Request, Query, BackgroundTasks
 
 import random
 import json
+import requests
 
 
 # @app.get('/webhooks/')
@@ -56,7 +58,8 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
 
     print(user_message)
 
-    if not verify_subscription(user_message.phone_number):
+    subscription_type = verify_subscription(user_message.phone_number)
+    if not subscription_type:
         return 'Subscription not found.'
 
     if check_message(user_message):
@@ -66,27 +69,47 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
 
     whatsapp_client.send_reaction(user_message=user_message, reaction='💭')
 
-    if user_message.message_type == '/perfil':
-        raw_response = f'Claro! Aquí tienes el link a tu perfil ✨ \n\nhttps://aldous.colegios.com/profile/{user_message.phone_number}'
+    # Starter Features
+    if user_message.message_type in ['text', 'image', 'audio']:
+        raw_response = initialize_tutor_workflow(user_message=user_message, debug=debug)
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
-    elif user_message.message_type == '/analisis':
-        analysis_text = initialize_analysis_workflow(user_message=user_message)
-        media_id = whatsapp_client.upload_media(message=user_message, analysis_text=analysis_text)
-        raw_response = 'Claro! Aquí tienes tu análisis. 📊'
+    # Starter Commands
+    elif user_message.message_type == '/perfil':
+        raw_response = f'Claro! Aquí tienes el link a tu perfil. ✨ \n\nhttps://aldous.colegios.com/profile/{user_message.phone_number}'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
-        response = whatsapp_client.send_media(message=user_message, media_id=media_id)
-    elif user_message.message_type == '/examen':
+        response = whatsapp_client.send_message(response_message=response_message)
+    # Pro Features
+    elif user_message.message_type == 'document' and subscription_type in ['pro', 'unlimited', 'tester']:
+        raw_response = initialize_tutor_workflow(user_message=user_message, debug=debug)
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response)
+        response = whatsapp_client.send_message(response_message=response_message)
+    # Pro Commands
+    elif user_message.message_type == '/guia' and subscription_type in ['pro', 'unlimited', 'tester']:
+        guide_text = initialize_guide_workflow(user_message=user_message)
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=guide_text, file_name='guia.txt', file_type='text/plain')
+        raw_response = 'Claro! Aquí tienes tu guía de estudio. 📚'
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=guide_text)
+        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='guia.txt', file_type='document')
+    elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
         evaluation_id = initialize_evaluation_workflow(user_message=user_message)
         raw_response = f'Claro! Aquí tienes tu examen personalizado 📝 \n\nhttps://aldous.colegios.com/evaluation/{user_message.phone_number}/{evaluation_id}'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
+    # Unlimited Commands
+    elif user_message.message_type == '/analisis' and subscription_type in ['unlimited', 'tester']:
+        analysis_text = initialize_analysis_workflow(user_message=user_message)
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=analysis_text, file_name='analisis.txt', file_type='text/plain')
+        raw_response = 'Claro! Aquí tienes tu análisis. 📊'
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=analysis_text)
+        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='analisis.txt', file_type='document')
+    # Unsupported/Unsuscribed Features
     elif user_message.message_type == 'unsupported':
-        raw_response = user_message.text
+        raw_response = 'Lo siento, no puedo procesar este tipo de mensaje aún. He tomado nota y trabajaré para agregar soporte en el futuro. 🤖'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
     else:
-        raw_response = initialize_tutor_workflow(user_message=user_message, debug=debug)
+        raw_response = 'Rayos! No cuentas con acceso a esta funcionalidad. Adquiere una suscripción con más beneficios para disfrutar de esta y muchas otras funciones. 🚀\n\n👉 https://app.recurrente.com/s/colegios-com/plan-pro'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
     
