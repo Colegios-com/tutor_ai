@@ -83,6 +83,7 @@ def initialize_memory_workflow(user_message: Message, response_message: Message)
         metadata['media_id'] = user_message.media_id
     save_vectors(metadata=metadata, data=[memory], embeddings=embeddings)
 
+    #TODO: Change from user id (instead of phone number) to jwt(phone).signature
     message_url = f'users/{user_message.phone_number}/messages/{user_message.id.replace('wamid.', '')}'
     response_url = f'users/{user_message.phone_number}/messages/{response_message.id.replace('wamid.', '')}'
     save_data(message_url, user_message.dict())

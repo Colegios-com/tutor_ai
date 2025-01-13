@@ -47,6 +47,8 @@ def save_user(payload: dict):
     else:
         subscription_type = 'starter'
 
+    #TODO: Change from customer id to jwt(email).signature
+
     # Get or create user
     url = f'accounts/{customer_id}'
     user = get_data(url)
@@ -61,6 +63,7 @@ def save_user(payload: dict):
 
     # Add subscription
     subscription_data = {'parent': email, 'subscription_type': subscription_type, 'usage': 0, 'expiry_date': expiry_date}
+    #TODO: Change from user id (instead of phone number) to jwt(phone).signature
     url = f'users/{striped_phone_number}/subscriptions/{transaction_id}'
     save_data(url, subscription_data)
 
@@ -71,6 +74,7 @@ def save_user(payload: dict):
 
 def verify_subscription(phone_number: str):
     # Gather data
+    #TODO: Change from user id (instead of phone number) to jwt(phone).signature
     url = f'users/{phone_number}/subscriptions'
     subscriptions = get_data(url)
 
@@ -85,6 +89,7 @@ def verify_subscription(phone_number: str):
 
 def verify_access(phone_number: str):
     # Gather data
+    #TODO: Change from user id (instead of phone number) to jwt(phone).signature
     url = f'users/{phone_number}/subscriptions'
     subscriptions = get_data(url)
 

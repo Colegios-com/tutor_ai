@@ -8,11 +8,11 @@
     ],
     "rewrites": [
       {
-        "source": "/profile/:phoneNumber",
+        "source": "/profile/:authenticationToken/",
         "destination": "/profile.html"
       },
       {
-        "source": "/evaluation/:phoneNumber/:id",
+        "source": "/evaluation/:authenticationToken/:id/",
         "destination": "/evaluation.html"
       },
       {

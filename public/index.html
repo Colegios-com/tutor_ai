@@ -3,7 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Aldous - Tu tutor virtual por WhatsApp disponible 24/7. Mejora tus calificaciones con ayuda personalizada en todas las materias usando IA avanzada. ¡Pruébalo hoy!">
+    <meta name="keywords" content="tutor virtual, tutor IA, tutor WhatsApp, tutoría online, ayuda escolar">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Colegios.com">
+    <meta name="theme-color" content="#25D366">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="canonical" href="https://tutor.colegios.com">
+    <meta property="og:title" content="Aldous | Tu profesor virtual por WhatsApp" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tutor.colegios.com" />
+    <meta property="og:image" content="https://colegios-media.s3.us-east-1.amazonaws.com/thumbnails/logo.png" />
     <title>Aldous | Tu profesor virtual por WhatsApp</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖍️</text></svg>">
     <style>
         /* Font Faces */
         @font-face {
@@ -59,6 +71,147 @@
             line-height: 1.6;
             overflow-x: hidden;
             width: 100%;
+        }
+        /* Phone Popup Styles */
+        .phone-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .close-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--dark);
+            cursor: pointer;
+            padding: 5px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .close-button:hover {
+            background-color: var(--light);
+        }
+
+        .phone-popup-content {
+            position: relative;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .phone-popup-content h3 {
+            color: var(--dark);
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .phone-popup-content p {
+            color: var(--dark);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .warning-text {
+            color: var(--dark);
+            font-weight: bold;
+            background-color: var(--light);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .checkbox-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .custom-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--dark);
+        }
+
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .checkmark {
+            width: 20px;
+            height: 20px;
+            background-color: var(--white);
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--primary);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .terms-link {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .terms-link:hover {
+            text-decoration: underline;
+        }
+
+        #continueToPayment {
+            width: 100%;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #continueToPayment.enabled {
+            opacity: 1;
+            cursor: pointer;
         }
 
         /* Common Section Styles */
@@ -865,6 +1018,10 @@
             body {
                 overflow-x: hidden;
             }
+
+            .phone-popup-content {
+                padding: 30px 20px;
+            }
             
             .price-cards {
                 grid-template-columns: 1fr;
@@ -931,6 +1088,30 @@
     </style>
 </head>
 <body>
+    <div id="phonePopup" class="phone-popup">
+        <div class="phone-popup-content">
+            <button class="close-button">✕</button>
+            <h3>Importante</h3>
+            <p>En el siguiente paso, te pediremos que ingreses un número de WhatsApp.</p>
+            <p class="warning-text">Este número debe ser el del estudiante que usará el servicio, no necesariamente el de quien realiza el pago.</p>
+            <div class="checkbox-container">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="understandingConfirmation" required>
+                    <span class="checkmark"></span>
+                    Entiendo que debo ingresar el número del estudiante
+                </label>
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="termsConfirmation" required>
+                    <span class="checkmark"></span>
+                    Acepto los <a href="#" class="terms-link">términos y condiciones</a>
+                </label>
+            </div>
+            <button id="continueToPayment" class="whatsapp-btn" disabled>
+                Continuar al pago
+            </button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <a href="#" class="logo">🖍️ colegios.com</a>
         <div class="nav-links">
@@ -1363,7 +1544,7 @@
         const navbar = document.querySelector('.navbar');
         const hamburger = document.querySelector('.hamburger');
         const mobileMenu = document.querySelector('.mobile-menu');
-        const scrollIndicators = document.querySelectorAll('.whatsapp-btn, .nav-whatsapp-btn');
+        const scrollIndicators = document.querySelectorAll('.whatsapp-btn:not(.price-card .whatsapp-btn), .nav-whatsapp-btn');
 
         window.addEventListener('scroll', () => {
             if (window.scrollY > 50) {
@@ -1373,12 +1554,88 @@
             }
         });
 
+        // Modified this part to exclude pricing buttons from scroll behavior
         scrollIndicators.forEach(button => {
             button.addEventListener('click', () => {
                 const featuresSection = document.querySelector('#prices');
                 featuresSection.scrollIntoView({ behavior: 'smooth' });
             });
         });
+
+        // Add phone popup functionality to pricing buttons
+        document.querySelectorAll('.price-card .whatsapp-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const originalUrl = button.getAttribute('href');
+                showPhonePopup(originalUrl);
+            });
+        });
+
+        function showPhonePopup(paymentUrl) {
+            const popup = document.getElementById('phonePopup');
+            const continueButton = document.getElementById('continueToPayment');
+            const understandingCheckbox = document.getElementById('understandingConfirmation');
+            const termsCheckbox = document.getElementById('termsConfirmation');
+            const closeButton = popup.querySelector('.close-button');
+
+            // Reset checkbox states when opening popup
+            resetPopup();
+            popup.style.display = 'flex';
+
+            function validateForm() {
+                const isValid = understandingCheckbox.checked && termsCheckbox.checked;
+                continueButton.disabled = !isValid;
+                continueButton.classList.toggle('enabled', isValid);
+            }
+
+            function resetPopup() {
+                understandingCheckbox.checked = false;
+                termsCheckbox.checked = false;
+                continueButton.disabled = true;
+                continueButton.classList.remove('enabled');
+            }
+
+            function closePopup() {
+                popup.style.display = 'none';
+                resetPopup();
+                // Remove event listeners
+                understandingCheckbox.removeEventListener('input', validateForm);
+                termsCheckbox.removeEventListener('input', validateForm);
+                closeButton.removeEventListener('click', closePopup);
+                continueButton.removeEventListener('click', handleContinue);
+                popup.removeEventListener('click', handleOutsideClick);
+                document.removeEventListener('keydown', handleEscape);
+            }
+
+            function handleContinue() {
+                if (!continueButton.disabled) {
+                    closePopup();
+                    window.location.href = paymentUrl;
+                }
+            }
+
+            function handleOutsideClick(e) {
+                if (e.target === popup) {
+                    closePopup();
+                }
+            }
+
+            function handleEscape(e) {
+                if (e.key === 'Escape' && popup.style.display === 'flex') {
+                    closePopup();
+                }
+            }
+
+            // Add event listeners
+            [understandingCheckbox, termsCheckbox].forEach(element => {
+                element.addEventListener('input', validateForm);
+            });
+
+            closeButton.addEventListener('click', closePopup);
+            popup.addEventListener('click', handleOutsideClick);
+            continueButton.addEventListener('click', handleContinue);
+            document.addEventListener('keydown', handleEscape);
+        }
 
         hamburger.addEventListener('click', () => {
             mobileMenu.classList.toggle('active');
@@ -1466,6 +1723,84 @@
         });
 
         document.addEventListener('DOMContentLoaded', loadActiveVideo);
+    </script>
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "EducationalService",
+          "name": "Aldous",
+          "description": "Tutor virtual por WhatsApp con IA avanzada",
+          "provider": {
+            "@type": "Organization",
+            "name": "Colegios.com"
+          },
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": "student"
+          }
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "¿Cómo funciona Aldous?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aldous es un tutor virtual que funciona a través de WhatsApp. Envías tus dudas por mensaje de texto, voz o imagen y recibes ayuda instantánea 24/7."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Qué materias cubre Aldous?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aldous cubre todas las materias escolares, incluyendo matemáticas, física, química, biología, literatura, historia y más."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cuánto cuesta el servicio?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ofrecemos varios planes desde $24/mes para el plan básico hasta $99/mes para el plan ultimate, todos con consultas ilimitadas."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Necesito descargar alguna aplicación?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No, Aldous funciona directamente a través de WhatsApp. No necesitas descargar ninguna aplicación adicional."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cómo mejora las calificaciones de los estudiantes?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "9 de cada 10 estudiantes mejoran sus notas en el primer mes gracias a la disponibilidad 24/7, explicaciones personalizadas y seguimiento continuo."
+              }
+            }
+          ]
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": "Aldous Tutor Virtual",
+          "description": "Tutor IA personalizado por WhatsApp disponible 24/7",
+          "offers": {
+            "@type": "AggregateOffer",
+            "lowPrice": "24",
+            "highPrice": "99",
+            "priceCurrency": "USD"
+          }
+        }
     </script>
 </body>
 </html>

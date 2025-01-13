@@ -92,6 +92,7 @@ def initialize_evaluation_workflow(user_message: Message) -> str:
     print(user_message.tokens)
     
     evaluation_id = str(uuid.uuid4())
+    #TODO: Change from user id (instead of phone number) to jwt(phone).signature
     evaluation_url = f'users/{user_message.phone_number}/evaluations/{evaluation_id}'
     raw_evaluation = response.choices[0].message.content
     repaired_evaluation = repair_json(raw_evaluation)
