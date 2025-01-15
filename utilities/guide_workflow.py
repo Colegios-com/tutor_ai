@@ -1,15 +1,19 @@
 from init.openai import openai_client
 
-from data.models import Message
-
-from utilities.storage import get_data
+from utilities.parsing import repair_json
+from utilities.storage import save_data, get_data
 from utilities.vector_storage import query_vectors
 
-import time
+from data.models import Message
+
+import json
+import uuid
 
 
-image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
-text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
+# image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
+# text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
+image_model = 'accounts/fireworks/models/qwen2-vl-72b-instruct'
+text_model = 'accounts/fireworks/models/qwen2p5-72b-instruct'
 
 
 def initialize_guide_workflow(user_message: Message) -> str:
@@ -17,7 +21,7 @@ def initialize_guide_workflow(user_message: Message) -> str:
     user_profile = ''
     user_profile_data = get_data(f'users/{user_message.phone_number}/profile')
     if user_profile_data:
-        user_profile = f'Adapt the study guide to the student\'s profile: {user_profile_data}'
+        user_profile = f'This is my academic profile: {user_profile_data}'
         print(user_profile)
 
     # Retrieve context information
@@ -27,13 +31,13 @@ def initialize_guide_workflow(user_message: Message) -> str:
     if user_message.context:
         context_data = get_data(f'users/{user_message.phone_number}/messages/{user_message.context.replace("wamid.", "")}')
         if context_data:
-            context_text = f'The student requests the study guide to be generated based on this message: {context_data['text']}'
+            context_text = f'Use this message as a reference when creating my study guide: {context_data['text']}'
             print(context_text)
             if context_data['message_type'] == 'document' and context_data['media_content']:
-                context_content = f'The attached document will serve as the basis for the study guide, as specifically requested by the student: {context_data['media_content']}'
+                context_content = f'This document is attached to the reference message: {context_data['media_content']}'
                 print(context_content)
             elif context_data['message_type'] == 'image' and context_data['media_content']:
-                context_content = f'The attached image will serve as the basis for the study guide, as specifically requested by the student.'
+                context_content = f'The accompanying image is attached to the reference message.'
                 context_image = context_data['media_content']
                 print(context_content)
                 print(context_image)
@@ -42,85 +46,39 @@ def initialize_guide_workflow(user_message: Message) -> str:
     relevant_memories = ''
     memories_data = query_vectors(data=user_message.text, user=user_message.phone_number)
     if memories_data:
-        relevant_memories = f'These memories are relevant to the student\'s current study guide request: {memories_data}'
+        relevant_memories = f'These memories are relevant to the creation of my study guide: {memories_data}'
         print(relevant_memories)
 
     # Retrieve file content
     file_content = ''
     if user_message.message_type == 'document' and user_message.media_content:
-        file_content = f'The student has attached this document to be used as a basis for the study guide: {user_message.media_content}'
+        file_content = f'Use this document in the creation of my study guide: {user_message.media_content}'
         print(file_content)
 
-    system_message = f'''
-        Create a personalized study guide for a specific topic. The guide should be structured as a learning pathway, with the following sections:
+    system_prompt = f'''
+        You are a study guide generator specialized in creating structured learning paths. You will generate a comprehensive study guide based on the provided topic, organizing content from fundamental concepts to advanced mastery. Your response must be strictly in the specified JSON format with no additional text.
 
-        ## Introduction to the Learning Pathway
-        * Topic: [Topic]
-        * Time Needed: [estimated time required to complete the pathway]
-        * What You Should Already Know: [prerequisites for the topic]
+        # REQUIREMENTS
+        - Generate a recursive tree structure where each node can branch into multiple sub-topics
+        - Each node must specify its type
+        - Include clear, measurable milestones for each learning component
+        - Ensure logical progression of concepts
+        - Include prerequisites and key questions for each node
+        - Each branch should represent a distinct learning path or sub-topic
+        - Leaf nodes should contain specific, actionable learning points
 
-        ## Core Objectives
-        * List 3-5 core objectives that I should focus on to master the topic
-        * For each objective, provide:
-            + A brief explanation of the concept
-            + Examples or illustrations to help clarify the concept
-            + Suggestions for how to practice and reinforce my understanding
-        * Optional Side Quests:
-            + List additional activities or topics that I can explore to gain extra knowledge or skills
-            + Provide suggestions for how to incorporate these side quests into my learning pathway
+        # STRUCTURE
+        {{"title": "[main topic or subject area]", "type": "[type of subject area]", "description": "[comprehensive overview of this learning node]", "milestone": {{"description": "[what success looks like for this node]", "criteria": [list of specific measurable outcomes], "measurement": "[how to assess achievement of criteria]"}}, "prerequisites": [list of required knowledge and/or skills], "key_questions": [list of key questions the student can ask you to strengthen their learning], "branches": [{{"title": "[sub-topic or component]", "type": "[type of sub-topic or component]", "description": "[detailed explanation of this branch]", "milestone": {{"description": "[specific success criteria for this branch]", "criteria": [list of branch specific outcomes], "measurement": "[branch-specific assessment method]"}}, "prerequisites": [list of branch specific requirements], "key_questions": [list of branch specific key questions the user can ask you to strengthen their learning], "branches": [{{"title": "[further subtopic]", "type": "[type of subtopic]", "description": "[specific concept details]", "milestone": {{"description": "[detailed success criteria]", "criteria": [list of detailed outcomes], "measurement": "[specific assessment method]"}}, "prerequisites": [list of specific requirements], "key_questions": [list of specific questions the user can ask you to strengthen their learning], "branches": []}}]}}]}}
 
-        ## Essential Terms and Concepts
-        * List essential terms and concepts, grouped by core objective
-        * Provide definitions, explanations, and examples for each term or concept
-        * Suggest ways to practice and reinforce my understanding of each term or concept
-        * Bonus Materials:
-            + List additional resources or activities that I can use to deepen my understanding of the topic
-            + Provide suggestions for how to use these bonus materials to support my learning
+        # NOTES
+        - Each branch should represent a logical subdivision of the parent topic
+        - Milestones should become more specific as you move deeper into the tree
+        - Key question lists should be relevant to the specific node's content
+        - Prerequisites should clearly indicate what's needed before starting that node
+    '''
 
-        ## Study Resources and Tools
-        * List recommended study resources, including:
-            + Main materials (e.g. textbooks, articles, videos)
-            + Practice tools (e.g. quizzes, worksheets, interactive simulations)
-            + Extra help (e.g. online forums, tutoring services)
-        * Provide suggestions for how to use each resource to support my learning
-        * Power-Ups:
-            + List additional tools or resources that I can use to accelerate my learning or overcome challenges
-            + Provide suggestions for how to use these power-ups to support my learning
-
-        ## Tracking Progress and Staying on Track
-        * Provide a progress tracking system, with checkpoints to determine when I can explain each core objective confidently
-        * Offer tips for staying motivated and on track, including:
-            + Common hangups and how to overcome them
-            + Smart strategies for managing time and effort
-            + Time-saving tips and shortcuts
-        * Leveling Up:
-            + Provide suggestions for how to reflect on my progress and adjust my learning pathway as needed
-            + Offer tips for how to celebrate my successes and stay motivated
-
-        ## Deepening Understanding and Exploring Further
-        * For each section, provide suggestions for questions I can ask to:
-            + Deepen my understanding of the topic
-            + Clarify doubts or misconceptions
-            + Explore related topics or applications
-        * Encourage me to ask questions and seek guidance throughout my journey
-        * Hidden Gems:
-            + List additional topics or activities that I can explore to gain a deeper understanding of the subject
-            + Provide suggestions for how to incorporate these hidden gems into my learning pathway
-
-        ## Final Checkpoints and Next Steps
-        * Provide a final set of checkpoints to ensure I have mastered the core objectives and concepts
-        * Offer suggestions for next steps, including:
-            + How to apply my new knowledge and skills
-            + How to continue learning and exploring the topic
-            + How to seek feedback and assessment from others
-        * Graduation:
-            + Provide a final assessment of my progress and mastery of the topic
-            + Offer suggestions for how to celebrate my achievements and reflect on my learning journey
-
-        Please generate the study guide in a standard format, with clear headings and concise language, and adapt the content to match my language and profile. Use only educational content relevant to the study topic, and avoid technical jargon or unnecessary complexity.
-        Note: Please ensure that all headings and section titles are translated to match the language of my request, and that the content is tailored to my specific needs and learning style. The output token count must remain under 3000 tokens.
-        
-        # STUDY GUIDE TOPIC
+    user_prompt = f'''
+        # EVALUATION TOPIC
         {user_message.text}
         {context_text}
         {context_content}
@@ -130,19 +88,30 @@ def initialize_guide_workflow(user_message: Message) -> str:
     '''
 
     model = text_model
-    content = [{'type': 'text', 'text': system_message}]
+    system_content = [{'type': 'text', 'text': system_prompt}]
+    user_content = [{'type': 'text', 'text': user_prompt}]
 
     if user_message.media_content and user_message.message_type == 'image':
         model = image_model
-        content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
+        user_content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
 
-    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': content}], max_tokens=3000)
+    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': system_content}, {'role': 'user', 'content': user_content}])
 
     print('TOTAL GUIDE TOKENS')
     user_message.tokens += response.usage.total_tokens
     print(user_message.tokens)
 
-    return response.choices[0].message.content
+    guide_id = str(uuid.uuid4())
+    guide_url = f'users/{user_message.phone_number}/guides/{guide_id}'
+    raw_guide = response.choices[0].message.content
+    repaired_guide = repair_json(raw_guide)
+    guide = json.loads(repaired_guide)
+
+    print(repaired_guide)
+
+    save_data(guide_url, guide)
+
+    return guide_id
 
 
 

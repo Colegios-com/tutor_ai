@@ -8,8 +8,10 @@ from utilities.vector_storage import get_vectors
 import time
 
 
-image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
-text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
+# image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
+# text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
+image_model = 'accounts/fireworks/models/qwen2-vl-72b-instruct'
+text_model = 'accounts/fireworks/models/qwen2p5-72b-instruct'
 
 
 def initialize_analysis_workflow(user_message: Message) -> str:
@@ -19,114 +21,87 @@ def initialize_analysis_workflow(user_message: Message) -> str:
     user_profile = ''
     user_profile_data = get_data(f'users/{user_message.phone_number}/profile')
     if user_profile_data:
-        user_profile = f'Adapt the analysis to the student\'s profile: {user_profile_data}'
+        user_profile = f'This is my academic profile: {user_profile_data}'
         print(user_profile)
     
     memories_data = get_vectors(user=user_message.phone_number, timestamp=timestamp)
     relevant_memories = ''
     if memories_data:
-        relevant_memories = f'These memories are relevant to the student\'s current analysis request: {memories_data["documents"]}'
+        relevant_memories = f'These memories from the past 7 days are relevant to creation of my analysis: {memories_data["documents"]}'
         print(relevant_memories)
 
-    system_message = f'''
-        Generate an actionable student progress analysis that strictly follows this format:
+    system_prompt = f'''
+        Here is the modified analysis prompt that mirrors the guide prompt:
 
-        <LEARNING_ANALYSIS>
-        ## Current Snapshot
+        You are a student progress analyst specialized in creating comprehensive learning analyses. You will generate a detailed examination of a student's current learning status, identifying strengths, weaknesses, and strategic development plans. Your response must be strictly in the specified format with no additional text.
+
+        # REQUIREMENTS
+        - Generate a comprehensive analysis that includes current snapshot, learning patterns, strategic development plan, action steps, progress indicators, next steps, and personal notes
+        - Each section must specify its purpose and content
+        - Include clear, measurable milestones for each learning component
+        - Ensure logical progression of concepts
+        - Include prerequisites and key questions for each section
+        - Each section should represent a distinct aspect of the student's learning and development
+
+        STRUCTURE
+        # Current Snapshot
         - Subject Areas: [List key subjects/topics]
         - Learning Stage: [Current level + prerequisites met]
         - Time Frame: [Period covered by analysis]
 
-        💡 Want to understand your starting point better? Ask me:
-        - "Can you break down my current level in [subject]?"
-        - "What prerequisites might I need to review?"
+        # Learning Patterns
+        ## Strengths Observed
+        [List of specific learning approaches that work well]
 
-        ## Learning Patterns
-        ### Strengths Observed
-        [List of 4-5 specific learning approaches that work well]
+        # Growth Areas
+        [List of specific challenges with observed patterns]
 
-        ### Growth Areas
-        [List of 3-4 specific challenges with observed patterns]
+        # Strategic Development Plan
+        ## Short-Term Goals (Next 2-4 weeks)
+        [List of specific, measurable objectives]
 
-        💡 Looking to understand your learning style? Ask me:
-        - "Why does [pattern] work well for me?"
-        - "How can I build on my strength in [area]?"
-        - "What causes me to struggle with [challenge]?"
+        ## Learning Strategies
+        [List of personalized approaches tied to observed patterns]
 
-        ## Strategic Development Plan
+        # Action Steps
+        For the Student: [List of specific, achievable tasks]
+        For Support System: [List of concrete ways others can help]
 
-        ### Short-Term Goals (Next 2-4 weeks)
-        [3-4 specific, measurable objectives]
+        # Progress Indicators
+        [List of measurable metrics with clear checkpoints]
 
-        ### Learning Strategies
-        [4-5 personalized approaches tied to observed patterns]
-
-        💡 Need strategy guidance? Ask me:
-        - "Can you create a practice plan for [goal]?"
-        - "How should I modify [strategy] for my style?"
-        - "What's a good way to track my progress?"
-
-        ## Action Steps
-
-        For the Student:
-        [5 specific, achievable tasks]
-
-        For Support System:
-        [3-4 concrete ways others can help]
-
-        💡 Ready to take action? Ask me:
-        - "Can you break down [task] into smaller steps?"
-        - "How do I know if I'm making progress?"
-        - "What should I do if I get stuck?"
-
-        ## Progress Indicators
-        [3-4 measurable metrics with clear checkpoints]
-
-        💡 Want to track effectively? Ask me:
-        - "How do I measure [indicator]?"
-        - "What's a good checkpoint schedule?"
-        - "Can you help me assess my current level?"
-
-        ## Next Steps & Resources
+        # Next Steps & Resources
         [List of immediate actions and supporting materials]
 
-        💡 Remember: I can help you:
-        - Break down complex topics
-        - Create practice exercises
-        - Analyze your progress
-        - Adjust strategies as needed
-        - Connect concepts to your interests
-        - Develop deeper understanding
-
-        ## Personal Notes
+        # Personal Notes
         [Specific observations about learning style and motivation]
 
-        💡 Want to dig deeper? Ask me:
-        - "How does my learning style affect my approach?"
-        - "What motivational strategies might work for me?"
-        - "How can I maintain momentum?"
-        </LEARNING_ANALYSIS>
-
-        # IMPORTANT
-        - Present content directly without tags, hints or technical elements
+        NOTES
+        - Each section should represent a logical aspect of the student's learning and development
+        - Milestones should become more specific as you move deeper into the analysis
+        - Key question lists should be relevant to the specific section's content
+        - Prerequisites should clearly indicate what's needed before starting that section
         - Use clear, standard formatting and headings throughout
         - Write in the same language as the user's message
         - Include only content relevant to the analysis
         - Maintain consistent structure between sections
+    '''
 
+    user_prompt = '''
         RELEVNAT CONTEXT:
         {relevant_memories}
         {user_profile}
     '''
 
     model = text_model
-    content = [{'type': 'text', 'text': system_message}]
+    system_content = [{'type': 'text', 'text': system_prompt}]
+    user_content = [{'type': 'text', 'text': user_prompt}]
 
     if user_message.media_content and user_message.message_type == 'image':
         model = image_model
-        content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
+        user_content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
 
-    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': content}])
+    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': system_content}, {'role': 'user', 'content': user_content}])
 
     print('TOTAL ANALYSIS TOKENS')
     user_message.tokens += response.usage.total_tokens

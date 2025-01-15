@@ -20,9 +20,7 @@ from utilities.whatsapp import verify_message, build_user_message, build_respons
 from fastapi import Request, Query, BackgroundTasks, HTTPException
 
 import random
-import requests
 import jwt
-import json
 import os
 
 
@@ -129,11 +127,10 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         response = whatsapp_client.send_message(response_message=response_message)
     # Pro Commands
     elif user_message.message_type == '/guia' and subscription_type in ['pro', 'unlimited', 'tester']:
-        guide_text = initialize_guide_workflow(user_message=user_message)
-        media_id = whatsapp_client.upload_media(message=user_message, file_content=guide_text, file_name='guiaDeEstudio.md', file_type='text/plain')
-        raw_response = 'Claro! Aquí tienes tu guía de estudio. 📚'
-        response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=guide_text)
-        response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='guiaDeEstudio.md', file_type='document', caption='Aquí está tu guía de estudio personalizada. 💡')
+        guide_id = initialize_guide_workflow(user_message=user_message)
+        raw_response = f'Claro! Aquí tienes tu guia personalizado 📝 \n\nhttps://aldous.colegios.com/guide/{guide_id}/{sign(user_message.phone_number)}/'
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response)
+        response = whatsapp_client.send_message(response_message=response_message)
     elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
         evaluation_id = initialize_evaluation_workflow(user_message=user_message)
         raw_response = f'Claro! Aquí tienes tu examen personalizado 📝 \n\nhttps://aldous.colegios.com/evaluation/{evaluation_id}/{sign(user_message.phone_number)}/'
@@ -142,8 +139,8 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     # Unlimited Commands
     elif user_message.message_type == '/analisis' and subscription_type in ['unlimited', 'tester']:
         analysis_text = initialize_analysis_workflow(user_message=user_message)
-        media_id = whatsapp_client.upload_media(message=user_message, file_content=analysis_text, file_name='analisisPersonalizado.md', file_type='text/markdown')
-        raw_response = 'Claro! Aquí tienes tu análisis. 📊'
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=analysis_text, file_name='analisisPersonalizado.md', file_type='text/plain')
+        raw_response = 'Claro! Aquí tienes tu análisis personalizado. 📊'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=analysis_text)
         response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='analisisPersonalizado.md', file_type='document', caption='Aquí está tu análisis personalizado. 🧠')
     # Unsupported/Unsuscribed Features
@@ -191,6 +188,8 @@ def get_content(request: Request, content_type: str, content_id: Optional[str] =
             url = f'users/{phone_number}/profile'
         elif content_type == 'evaluations':
             url = f'users/{phone_number}/evaluations/{content_id}'
+        elif content_type == 'guides':
+            url = f'users/{phone_number}/guides/{content_id}'
         else:
             raise HTTPException(status_code=404, detail='Content type not found.')
         
@@ -209,6 +208,8 @@ def update_content(request: Request, payload: dict, content_type: str, content_i
             url = f'users/{phone_number}/profile'
         elif content_type == 'evaluations':
             url = f'users/{phone_number}/evaluations/{content_id}'
+        elif content_type == 'guides':
+            url = f'users/{phone_number}/guides/{content_id}'
         else:
             raise HTTPException(status_code=404, detail='Content type not found.')
         save_data(url, payload)

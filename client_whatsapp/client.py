@@ -118,9 +118,9 @@ class WhatsappClient:
                                     'type': 'image',
                                     'image': {
                                     'link': 'https://colegios-media.s3.amazonaws.com/thumbnails/welcomeBanner.png'
-                                    }
-                                }
-                            ]
+                                    },
+                                },
+                            ],
                         },
                     ]
                 }

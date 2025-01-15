@@ -8,7 +8,6 @@
     <meta name="robots" content="index, follow">
     <meta name="author" content="Colegios.com">
     <meta name="theme-color" content="#25D366">
-    <link rel="manifest" href="/manifest.json">
     <link rel="canonical" href="https://tutor.colegios.com">
     <meta property="og:title" content="Aldous | Tu profesor virtual por WhatsApp" />
     <meta property="og:type" content="website" />
@@ -1540,7 +1539,25 @@
         </div>
     </footer>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8l6OGrYpQCukAGuwUacdaBQ023eZNvKk",
+            authDomain: "colegios-tutor.firebaseapp.com",
+            databaseURL: "https://colegios-tutor-default-rtdb.firebaseio.com",
+            projectId: "colegios-tutor",
+            storageBucket: "colegios-tutor.firebasestorage.app",
+            messagingSenderId: "625155574256",
+            appId: "1:625155574256:web:8d5f6520468bc1ab1ef535",
+            measurementId: "G-6WDK5PS803"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
         const navbar = document.querySelector('.navbar');
         const hamburger = document.querySelector('.hamburger');
         const mobileMenu = document.querySelector('.mobile-menu');

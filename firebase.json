@@ -16,9 +16,14 @@
         "destination": "/evaluation.html"
       },
       {
+        "source": "/guide/:authenticationToken/:id/",
+        "destination": "/guide.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
-    ]
+    ],
+    "errorPage": "404.html"
   }
 }
