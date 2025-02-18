@@ -9,6 +9,7 @@ from typing import Optional
 # Utilities
 from utilities.account import save_user, verify_subscription, verify_access
 from utilities.analysis_workflow import initialize_analysis_workflow
+from utilities.cryptography import decrypt_request, encrypt_response
 from utilities.evaluation_workflow import initialize_evaluation_workflow
 from utilities.guide_workflow import initialize_guide_workflow
 from utilities.memory_workflow import initialize_memory_workflow
@@ -17,7 +18,7 @@ from utilities.tutor_workflow import initialize_tutor_workflow
 from utilities.whatsapp import verify_message, build_user_message, build_response_message, check_message
 
 # Async
-from fastapi import Request, Query, BackgroundTasks, HTTPException
+from fastapi import Request, Response, Query, BackgroundTasks, HTTPException
 
 import random
 import jwt
@@ -61,6 +62,13 @@ def verify(authorization_token):
     except Exception:
         raise HTTPException(status_code=401, detail='Token verification failed.')
 
+
+@app.post('/public_key/')
+def whatsapp_public_key():
+    response = whatsapp_client.add_public_key()
+    return response
+
+
 # @app.get('/webhooks/')
 # def whatsapp_webhooks():
 #     response = whatsapp_client.list_webhooks()
@@ -97,8 +105,6 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     # TODO: Build message after all verifications
     user_message = build_user_message(payload)
 
-    print(user_message)
-
     subscription_type = verify_subscription(user_message.phone_number)
     if not subscription_type:
         return 'Subscription not found.'
@@ -115,6 +121,15 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         raw_response = initialize_tutor_workflow(user_message=user_message, debug=debug)
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
+    elif user_message.message_type == 'sticker':
+        sticker = random.randint(1, 11)
+        with open(f'stickers/{sticker}.webp', 'rb') as file:
+            file_content = file.read()
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=file_content, file_name='sticker.webp', file_type='image/webp')
+        raw_response = 'Que bonito sticker 🌈'
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='sticker', media_id=media_id)
+        response = whatsapp_client.send_message(response_message=response_message)
+        response = whatsapp_client.send_media(message=response_message, media_id=response_message.media_id, file_name='sticker.webp', file_type='sticker')
     # Starter Commands
     elif user_message.message_type == '/perfil':
         raw_response = f'Claro! Aquí tienes el link a tu perfil. ✨ \n\nhttps://aldous.colegios.com/profile/{sign(user_message.phone_number)}/'
@@ -131,6 +146,41 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         raw_response = f'Claro! Aquí tienes tu guia personalizado 📝 \n\nhttps://aldous.colegios.com/guide/{guide_id}/{sign(user_message.phone_number)}/'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
+
+
+
+    # elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
+    #     components = [
+    #         {
+    #             'type': 'body',
+    #             'parameters': [
+    #                 {
+    #                     'type': 'text',
+    #                     'parameter_name': 'first_name',
+    #                     'text': 'Dudu',
+    #                 },
+    #             ],
+    #         },
+    #         {
+    #             'type': 'button',
+    #             'sub_type': 'flow',
+    #             'index': '0',
+    #             'parameters': [
+    #                 {
+    #                     'type': 'action',
+    #                     'action': {
+                 
+    #                     }
+    #                 }
+    #             ]
+    #         }
+    #     ]
+    #     whatsapp_client.send_template(phone_number=user_message.phone_number, template_name='test_flow', components=components)
+    #     random_reaction = random.choice(['🖍️', '✏️', '🖊️'])
+    #     whatsapp_client.send_reaction(user_message=user_message, reaction=random_reaction)
+    #     return True
+
+        
     elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
         evaluation_id = initialize_evaluation_workflow(user_message=user_message)
         raw_response = f'Claro! Aquí tienes tu examen personalizado 📝 \n\nhttps://aldous.colegios.com/evaluation/{evaluation_id}/{sign(user_message.phone_number)}/'
@@ -173,7 +223,20 @@ def renew_subscription(request: Request, payload: dict):
     headers = request.headers
     if headers['origin'] == 'Nf8Sa!EGM3%&cKyIcyy%In$@vZ^klOI!':
         phone_number = save_user(payload)
-        whatsapp_client.send_template(phone_number=phone_number, template_name='subscription_activated')
+        components = [
+            {
+                'type': 'header',
+                'parameters': [
+                    {
+                        'type': 'image',
+                        'image': {
+                        'link': 'https://colegios-media.s3.amazonaws.com/thumbnails/welcomeBanner.png'
+                        },
+                    },
+                ],
+            },
+        ]
+        whatsapp_client.send_template(phone_number=phone_number, template_name='subscription_activated', components=components)
         return 'Subscription renewed successfully.'
     else:
         return 'Unauthorized request.'
@@ -192,7 +255,6 @@ def get_content(request: Request, content_type: str, content_id: Optional[str] =
             url = f'users/{phone_number}/guides/{content_id}'
         else:
             raise HTTPException(status_code=404, detail='Content type not found.')
-        
         data = get_data(url)
         return data
     except:
@@ -214,5 +276,19 @@ def update_content(request: Request, payload: dict, content_type: str, content_i
             raise HTTPException(status_code=404, detail='Content type not found.')
         save_data(url, payload)
         return 'Content updated successfully.'
+    except:
+        return 'Unauthorized request.'
+    
+
+@app.post('/flow_test/')
+async def flow_test(request: Request, background_tasks: BackgroundTasks):
+    try:
+        payload = await request.json()
+        decrypted_data, aes_key, iv = decrypt_request(payload['encrypted_flow_data'], payload['encrypted_aes_key'], payload['initial_vector'])
+        print(f'Decrypted data: {decrypted_data}')
+        response = {"data": {"status": "active"}}
+
+        encrypted_response = encrypt_response(response, aes_key, iv)
+        return Response(content=encrypted_response, media_type='text/plain')
     except:
         return 'Unauthorized request.'

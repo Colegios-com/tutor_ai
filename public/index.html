@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Aldous - Tu tutor virtual por WhatsApp disponible 24/7. Mejora tus calificaciones con ayuda personalizada en todas las materias usando IA avanzada. ¡Pruébalo hoy!">
-    <meta name="keywords" content="tutor virtual, tutor IA, tutor WhatsApp, tutoría online, ayuda escolar">
-    <meta name="robots" content="index, follow">
+    <meta name="keywords" content="tutor virtual, tutor IA, tutor WhatsApp, tutoría online, ayuda escolar, educación personalizada, aprendizaje en línea, estudiantes, padres, maestros, matemáticas, ciencias, literatura, historia, IA educativa, tecnología educativa">    <meta name="robots" content="index, follow">
     <meta name="author" content="Colegios.com">
     <meta name="theme-color" content="#25D366">
     <link rel="canonical" href="https://tutor.colegios.com">
-    <meta property="og:title" content="Aldous | Tu profesor virtual por WhatsApp" />
+    <meta property="og:title" content="Aldous | Tu tutor virtual por WhatsApp" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://tutor.colegios.com" />
     <meta property="og:image" content="https://colegios-media.s3.us-east-1.amazonaws.com/thumbnails/logo.png" />
-    <title>Aldous | Tu profesor virtual por WhatsApp</title>
+    <title>Aldous | Tu tutor virtual por WhatsApp</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖍️</text></svg>">
     <style>
         /* Font Faces */
@@ -1085,6 +1084,28 @@
             }
         }
     </style>
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "q7t1u2l1k1");
+    </script>
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1129046838486933');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1129046838486933&ev=PageView&noscript=1"/>
+    </noscript>
 </head>
 <body>
     <div id="phonePopup" class="phone-popup">
@@ -1422,7 +1443,7 @@
         <div class="price-cards">
             <div class="price-card">
                 <h3>Básico</h3>
-                <div class="price">$24<span>/mes</span></div>
+                <div class="price">$9<span>/mes</span></div>
                 <div class="price-compare">Menos que una tutoría particular</div>
                 <ul>
                     <li>Consultas ilimitadas</li>
@@ -1439,7 +1460,7 @@
             <div class="price-card popular">
                 <div class="popular-badge">Beta</div>
                 <h3>Completo</h3>
-                <div class="price">$49<span>/mes</span></div>
+                <div class="price">$19<span>/mes</span></div>
                 <div class="price-compare">Menos que dos tutorías particulares</div>
                 <ul>
                     <li>Consultas ilimitadas</li>
@@ -1460,7 +1481,7 @@
             <div class="price-card">
                 <div class="popular-badge">Pronto</div>
                 <h3>Ultimate</h3>
-                <div class="price">$99<span>/mes</span></div>
+                <div class="price">$29<span>/mes</span></div>
                 <div class="price-compare">Menos que una tutoría particular para 3 estudiantes</div>
                 <ul>
                     <li>Consultas ilimitadas</li>
@@ -1532,8 +1553,8 @@
                 </div>
                 <div class="footer-column">
                     <h3>Legal</h3>
-                    <a href="#">Términos y Condiciones</a>
-                    <a href="#">Política de Privacidad</a>
+                    <a href="https://gist.github.com/0xdesdenova/92d3aa109e0a8a16455594871240e653">Términos y Condiciones</a>
+                    <a href="https://gist.github.com/0xdesdenova/b363ad00dc44431b53adba6cc98ac35c">Política de Privacidad</a>
                 </div>
             </div>
         </div>
@@ -1595,6 +1616,7 @@
             const termsCheckbox = document.getElementById('termsConfirmation');
             const closeButton = popup.querySelector('.close-button');
 
+
             // Reset checkbox states when opening popup
             resetPopup();
             popup.style.display = 'flex';
@@ -1626,6 +1648,7 @@
 
             function handleContinue() {
                 if (!continueButton.disabled) {
+                    fbq('track', 'InitiateCheckout', {url: paymentUrl});
                     closePopup();
                     window.location.href = paymentUrl;
                 }

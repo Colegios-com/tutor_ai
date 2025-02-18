@@ -27,35 +27,33 @@ def initialize_memory_workflow(user_message: Message, response_message: Message)
         print(file_content)
     
     system_prompt = f'''
-        # PURPOSE
-        Extract the single most valuable teaching insight from this interaction that will meaningfully improve future responses.
+        # Purpose: Identify the *single most actionable teaching insight* from interactions to enhance future responses.  
 
-        # LOGICAL ANALYSIS
-        1. Examine Exchange
-        - What was the student trying to achieve?
-        - How did they approach it?
-        - How effective was the response?
+        ##Process
+        1. **Analyze Interaction**  
+        - Goal: What was the student's objective?  
+        - Approach: How did they attempt to achieve it?  
+        - Effectiveness: Did the response address their needs?  
 
-        2. Deterine CONTENT and CONTEXT
-        - What was the key insight?
-        - Why was it important?
-        - How was it produced?
+        2. **Extract Core Insight**  
+        - Focus on ONE of:  
+            - **LEARNING_STYLE** (methods/patterns in their process)  
+            - **KNOWLEDGE_GAP** (misconceptions or missing foundations)  
+            - **COMPREHENSION** (mastery demonstration)  
+            - **PREFERENCE** (explanation styles they resonate with)  
+            - **CHALLENGE** (specific recurring struggles)  
+            - **PROGRESS** (critical breakthroughs)  
+        - Articulate **why** it matters for tailoring instruction.  
 
-        3. Insight Classification
-        IF demonstrates learning method/style → LEARNING_STYLE
-        IF reveals knowledge gap/misconception → KNOWLEDGE_GAP
-        IF shows mastery/understanding → COMPREHENSION
-        IF indicates preferred explanation type → PREFERENCE
-        IF highlights specific difficulty → CHALLENGE
-        IF demonstrates progress/breakthrough → PROGRESS
+        ##Format
+        # TYPE ## Insight (direct quote/key phrase) ### Pedagogical rationale (1 line)
 
-        # FORMAT  
-        Response must be in this format: # TYPE ## CONTENT ### CONTEXT
+        ##Rules 
+        - Use the student's **exact language** for the insight.  
+        - Prioritize insights that directly inform adaptive teaching strategies.  
 
-        # IMPORTANT
-        - Include only the MOST actionable insight
-        - Must influence future teaching
-        - The insight must be in the language of the interaction
+        ##Example
+        # KNOWLEDGE_GAP ## The student thought derivatives equal slope, not rates ### Confusing foundational concept limits applied problem-solving
     '''
 
     user_prompt = f'''

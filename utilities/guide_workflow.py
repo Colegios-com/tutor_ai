@@ -112,8 +112,3 @@ def initialize_guide_workflow(user_message: Message) -> str:
     save_data(guide_url, guide)
 
     return guide_id
-
-
-
-
-

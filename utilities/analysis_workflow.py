@@ -31,8 +31,6 @@ def initialize_analysis_workflow(user_message: Message) -> str:
         print(relevant_memories)
 
     system_prompt = f'''
-        Here is the modified analysis prompt that mirrors the guide prompt:
-
         You are a student progress analyst specialized in creating comprehensive learning analyses. You will generate a detailed examination of a student's current learning status, identifying strengths, weaknesses, and strategic development plans. Your response must be strictly in the specified format with no additional text.
 
         # REQUIREMENTS
@@ -108,8 +106,3 @@ def initialize_analysis_workflow(user_message: Message) -> str:
     print(user_message.tokens)
 
     return response.choices[0].message.content
-
-
-
-
-

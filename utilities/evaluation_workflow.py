@@ -104,8 +104,3 @@ def initialize_evaluation_workflow(user_message: Message) -> str:
     save_data(evaluation_url, evaluation)
 
     return evaluation_id
-
-
-
-
-

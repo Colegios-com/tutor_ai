@@ -25,7 +25,6 @@ def save_vectors(metadata: dict, data: list, embeddings: list, identifier: str =
         # Additional Metadata
         metadatas=[metadata for data_point in data],
     )
-    print('Saving Vectors')
     return True
 
 

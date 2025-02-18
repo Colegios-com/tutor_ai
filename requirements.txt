@@ -1,5 +1,6 @@
 chromadb
 cohere
+cryptography
 fastapi
 firebase_admin
 fireworks-ai

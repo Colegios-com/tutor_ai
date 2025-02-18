@@ -10,10 +10,32 @@ import json
 class WhatsappClient:
     def __init__(self, key):
         self.key = key
+        
+
+    def add_public_key(self):
+
+        url = f'https://graph.facebook.com/v22.0/486935574495266/whatsapp_business_encryption'
+        
+        headers = {
+            'Authorization': f'Bearer EAAH8K5nwnZCwBOx226GON8zzS5RbVxXEfLHZAfGyY96OXmjk7TI4JRy3xNC2uNcZCZB6IgBkMnJrKwbQwKq8aEN3BC3d3wVXdCjr5HIevDU7gdYa7wCIBHVx1C3xQyWhbarm55niyRWJrsP0QZAeQdZASZBvRgtnRQLsJMXacojsvoYIG9ZC9Ka7yoJ1Ncg2Fty57QZDZD',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        data = {
+            'business_public_key': 'PUBLIC_KEY'
+        }
+
+        try:
+            response = requests.post(url, data=data, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(response.text)
+            return f'Error making request: {e}'
 
 
     def list_webhooks(self):        
-        url = f'https://graph.facebook.com/v21.0/447464381784934/subscribed_apps'
+        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps'
         
         headers = {
             'Authorization': f'Bearer EAAPxOaWf7FUBOwI8ArF7ME4cvRBl13zSYz68PQSLanZBCP27NKZAbsRT3V0fuzmOh6Pq1sjajKLM83UvIs2e46VtKkEL4LKruzFoOSrkFD0JZC5B7utabMLsxUZBmHVdtc4F8Rr5ZCGFdZC8JZCPfSIdkqMgNrXoweYkCl3XrF7ZB5IldqohCp84jdI0KPxLNRqM2uI7DJkKtZAdUEbOnyYTvrjljHQZDZD',
@@ -30,7 +52,7 @@ class WhatsappClient:
     
     def delete_webhook(self):
 
-        url = f'https://graph.facebook.com/v21.0/447464381784934/subscribed_apps'
+        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps'
         
         headers = {
             'Authorization': f'Bearer EAAPxOaWf7FUBOwI8ArF7ME4cvRBl13zSYz68PQSLanZBCP27NKZAbsRT3V0fuzmOh6Pq1sjajKLM83UvIs2e46VtKkEL4LKruzFoOSrkFD0JZC5B7utabMLsxUZBmHVdtc4F8Rr5ZCGFdZC8JZCPfSIdkqMgNrXoweYkCl3XrF7ZB5IldqohCp84jdI0KPxLNRqM2uI7DJkKtZAdUEbOnyYTvrjljHQZDZD',
@@ -47,7 +69,7 @@ class WhatsappClient:
 
     def add_webhook(self):
 
-        url = f'https://graph.facebook.com/v21.0/447464381784934/subscribed_apps'
+        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps'
         
         headers = {
             'Authorization': f'Bearer EAAPxOaWf7FUBOwI8ArF7ME4cvRBl13zSYz68PQSLanZBCP27NKZAbsRT3V0fuzmOh6Pq1sjajKLM83UvIs2e46VtKkEL4LKruzFoOSrkFD0JZC5B7utabMLsxUZBmHVdtc4F8Rr5ZCGFdZC8JZCPfSIdkqMgNrXoweYkCl3XrF7ZB5IldqohCp84jdI0KPxLNRqM2uI7DJkKtZAdUEbOnyYTvrjljHQZDZD',
@@ -81,7 +103,7 @@ class WhatsappClient:
             }
 
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/{user_message.phone_number_id}/messages', 
+                f'https://graph.facebook.com/v22.0/{user_message.phone_number_id}/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
@@ -93,7 +115,7 @@ class WhatsappClient:
             return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
 
     
-    def send_template(self, phone_number, template_name):
+    def send_template(self, phone_number, template_name, components=None):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -110,26 +132,16 @@ class WhatsappClient:
                     'language': {
                         'code': 'en'
                     },
-                    'components': [
-                        {
-                            'type': 'header',
-                            'parameters': [
-                                {
-                                    'type': 'image',
-                                    'image': {
-                                    'link': 'https://colegios-media.s3.amazonaws.com/thumbnails/welcomeBanner.png'
-                                    },
-                                },
-                            ],
-                        },
-                    ]
                 }
             }
+            if components:
+                payload['template']['components'] = components
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/486935574495266/messages', 
+                f'https://graph.facebook.com/v22.0/486935574495266/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
+            print(response.text)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -154,7 +166,7 @@ class WhatsappClient:
                 }
             }
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/{response_message.phone_number_id}/messages', 
+                f'https://graph.facebook.com/v22.0/{response_message.phone_number_id}/messages', 
                 headers=headers, 
                 data=json.dumps(payload)
             )
@@ -168,7 +180,7 @@ class WhatsappClient:
 
     def get_media_url(self, id):
         try:
-            url = f'https://graph.facebook.com/v21.0/{id}'
+            url = f'https://graph.facebook.com/v22.0/{id}'
             
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -228,7 +240,7 @@ class WhatsappClient:
             }
 
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/media',
+                f'https://graph.facebook.com/v22.0/{message.phone_number_id}/media',
                 data={
                     'messaging_product': 'whatsapp',
                     'type': file_type
@@ -245,7 +257,7 @@ class WhatsappClient:
                 raise Exception(f'Upload failed: {response.text}')
 
         except Exception as e:
-            print(f'Error uploading analysis: {e}')
+            print(f'Error uploading file: {e}')
             return {'status': False, 'message': f'Error uploading analysis: {e}'}
         
 
@@ -268,6 +280,10 @@ class WhatsappClient:
                     'id': media_id,
                     'caption': 'Imagen Generado',
                 }
+            elif file_type == 'sticker':
+                payload['sticker'] = {
+                    'id': media_id,
+                }
             elif file_type == 'audio':
                 payload['audio'] = {
                     'id': media_id,
@@ -279,9 +295,8 @@ class WhatsappClient:
                     'caption': caption,
                     'filename': file_name,
                 }
-
             response = requests.post(
-                f'https://graph.facebook.com/v21.0/{message.phone_number_id}/messages',
+                f'https://graph.facebook.com/v22.0/{message.phone_number_id}/messages',
                 headers=headers,
                 data=json.dumps(payload)
             )

@@ -6,10 +6,10 @@ from utilities.vector_storage import query_vectors
 from data.models import Message
 
 
-# image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
-# text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
-image_model = 'accounts/fireworks/models/qwen2-vl-72b-instruct'
-text_model = 'accounts/fireworks/models/qwen2p5-72b-instruct'
+image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
+text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
+# image_model = 'accounts/fireworks/models/qwen2-vl-72b-instruct'
+# text_model = 'accounts/fireworks/models/qwen2p5-72b-instruct'
 
 
 
@@ -57,41 +57,46 @@ def initialize_tutor_workflow(user_message: Message, debug=False) -> str:
         print(file_content)
 
     system_prompt = f'''
-        # PURPOSE
-        You are the worlds most advanced AI tutor. Your primary goal is to provide personalized, engaging, and effective educational support to learners.
+        # PURPOSE: Be a personalized, engaging AI tutor. Focus on clarity, adaptability, and actionable guidance.
 
-        # LOGICAL ANALYSIS
-        1. Current Message Review
-        - What is being asked/stated?
-        - What are the key terms/concepts?
+        # CORE RULES  
+        1. **Analysis Guidelines**  
+        - Classify intent: 'Follow-up', 'Clarification', 'New Topic', or 'Refinement'.
+        - Use prior context *only* when relevant.
+        - For ambiguous user messages, especially single words, analyze accompanying context. If none or unclear, prompt for clarification.
 
-        2. Previous Exchange Check
-        - Does it reference the previous message?
-        - Are there shared keywords/concepts?
+        2. **Response Content Guidelines**
+        - Never reference intent classification.
+        - Respond in the same language as the user's current message.
+        - *Prioritize brevity* and step-by-step explanations.
+        - Use examples, analogies, and visuals to enhance understanding.
+        - *Avoid* jargon, complex terms, or overly technical explanations.
+        - Be as direct and clear as possible in responses.
+        - Use emoji to engage the user.
 
-        3. Intent Classification
-        IF references previous AND asks for more detail → FOLLOW_UP
-        IF questions previous understanding → CLARIFICATION
-        IF introduces unrelated concepts → NEW_TOPIC
-        IF builds on previous response → REFINEMENT
-        IF confirms understanding → ACKNOWLEDGMENT
-        IF makes a choice/selection → DECISION
+        3. **Response Formatting**
+        - **Emphasis**: Use *bold* or _italics_ to highlight important words or phrases.
+        - **Code and Mathematical Expressions**: Enclose examples and mathematical expressions in `code` format.
+        - **Quotes**: Start each quote on a new line, using the '>' symbol.
 
-        4. Context Relevance
-        IF intent == NEW_TOPIC → ignore previous context
-        IF intent == FOLLOW_UP → use previous context
-        IF intent == CLARIFICATION → focus on misunderstood elements
-
-        # ANSWER
-        1. Respond in a manner that is clear, concise, and actionable.
-        2. Provide guidance, feedback, or instruction.
-        3. Encourage further engagement.
-        4. Ensure the response is tailored to the user's needs.
-
-        # FORMAT
-        1. The response must be in the language of the user's latest message.
-        1. Respond using WhatsApp formatting guidelines.
-        2. You must never use LaTeX/MathJax mathematical notation syntax/formatting. Instead use plain text.
+        4. **Math Formatting**: 
+        - *Always* UTF-8 symbols for mathematical expressions.
+        - *Never* use LaTeX or backslash formatting; use the appropriate UTF-8 symbol.
+        - *Always* utilize subscript and superscript where appropriate, e.g., `x₁ + x₂ = 10`, `x² + y³ = zⁿ`.
+        - *Never* use underscore (_) for subscripts; use the appropriate UTF-8 symbol.
+        - *Examples*:
+            - `½`, `5 × 3 = 15`, `10 ÷ 2 = 5`
+            - `√2`, `∛8`, `∜16`
+            - `∑ₙ₌₁^∞ xₙ`, `∏ₖ₌₁^10 k`, `∫₀¹ x² dx`
+            - `dy/dx`, `∂f/∂x`, `limₙ→∞ (1 + 1/n)ⁿ = e`
+            - `v = [v₁, v₂, v₃]`, `A = [[a₁₁, a₁₂], [a₂₁, a₂₂]]`
+            - `P(A | B)`, `μ = 0`, `σ² = 1`
+            - `sin(θ) + cos²(θ) = 1`, `F = ma`, `E = mc²`
+            - `e^(iπ) + 1 = 0`, `x = (−b ± √(b² − 4ac))/(2a)`
+            - `∫₀^∞ e⁻ˣ dx = 1`, `a ⋅ b = |a||b|cosθ`
+            - `μ = (∑ₙ₌₁^N xₙ)/N`, `∇⋅F = ρ`, `∇×F = J`
+            - `∇²f = 0`, `∂²u/∂t² = c²∇²u`
+            - `a₁ + a₂ = 10`, `x₁² + x₂² = r²`
     '''
 
     user_prompt = f'''
@@ -103,6 +108,11 @@ def initialize_tutor_workflow(user_message: Message, debug=False) -> str:
         {relevant_memories}
         {user_profile}
 
+        You must respond *DIRECTLY* and *CLEARLY* in the same language as my current message.
+        You must *EXCLUSIVELY* use UTF-8 symbols for mathematical expressions.
+        You must *NEVER* use LaTeX or backslash formatting in your response; use the appropriate UTF-8 symbol.
+        You must *ALWAYS* utilize subscript and superscript where appropriate.
+        You must *NEVER* use underscore (_) for subscripts; use the appropriate UTF-8 symbol.
     '''
 
     model = text_model
@@ -120,8 +130,3 @@ def initialize_tutor_workflow(user_message: Message, debug=False) -> str:
     print(user_message.tokens)
 
     return response.choices[0].message.content
-
-
-
-
-

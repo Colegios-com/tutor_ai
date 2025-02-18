@@ -83,7 +83,21 @@ def build_user_message(payload: dict) -> Message:
                 message_type='image',
                 text=message['image'].get('caption', 'User sent image. Build your response based on the image and the context.'),
                 media_id=media_id,
-                media_content=media_content
+                media_content=media_content,
+            )
+        
+        elif 'sticker' in message:
+            media_id = message['sticker']['id']
+            media_url = whatsapp_client.get_media_url(id=media_id)
+            media_content = whatsapp_client.convert_to_base64(
+                file=whatsapp_client.download_media(url=media_url)
+            )
+            return Message(
+                **base_data,
+                message_type='sticker',
+                text='User sent sticker. Build your response based on the sticker and the context.',
+                media_id=media_id,
+                media_content=media_content,
             )
         
         elif 'audio' in message:
