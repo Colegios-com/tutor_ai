@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/dashboard/auth/4EdnXtntS$@syNd2/",
+        "destination": "/dashboard.html"
+      },
+      {
         "source": "/profile/:authenticationToken/",
         "destination": "/profile.html"
       },
@@ -18,6 +22,10 @@
       {
         "source": "/guide/:authenticationToken/:id/",
         "destination": "/guide.html"
+      },
+      {
+        "source": "/payment/",
+        "destination": "/payment.html"
       },
       {
         "source": "**",

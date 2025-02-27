@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
+            width: 100vw;
+            overflow-x: hidden;
+            color: #333;
+            overflow-y: hidden; /* added back - it was important for preventing scroll bars */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            background-color: transparent;
+            border-radius: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .navbar-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .navbar-buttons button {
+            padding: 8px 15px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .navbar-buttons button:hover {
+            background-color: #0056b3;
+        }
+
+        .content-container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+
+        .user-detail-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            margin-left: 20px;
+        }
+
+        .data-panel-container {
+            display: none;
+            flex-wrap: wrap; /* Allow items to wrap to the next row */
+            justify-content: center; /* or space-around, space-between, center */
+            gap: 20px;
+            border-radius: 8px;
+            margin: 0 20px 20px 20px;
+            overflow-y: auto;
+        }
+
+        .chart-container {
+            height: 300px;
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .user-list {
+            width: 400px;
+            background-color: #fff;
+            border-right: 1px solid #e1e7ef;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .user-stats {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+
+        .user_stat {
+            text-align: center;
+        }
+
+        .user-list h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.6rem;
+        }
+
+        .user-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .user-item {
+            padding: 15px;
+            border-bottom: 1px solid #f2f4f7;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            border-radius: 4px;
+        }
+
+        .user-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .user-item h3 {
+            margin: 0 0 5px;
+            font-size: 1.1rem;
+            color: #444;
+        }
+
+        .user-item p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .user-detail {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-right: 20px;
+            margin-bottom: 20px;
+        }
+
+        .user-detail h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.6rem;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .detail-section {
+            border: 1px solid #e1e7ef;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .detail-section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .detail-section p {
+            margin: 0;
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .message-history {
+            margin-top: 20px;
+            border-top: 1px solid #e1e7ef;
+            padding-top: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 70%;
+            clear: both;
+            font-size: 1rem;
+        }
+
+        .message.user {
+            background-color: #e0f7fa;
+            align-self: flex-end;
+            float: right;
+            color: #333;
+        }
+
+        .message.agent {
+            background-color: #f2f4f7;
+            align-self: flex-start;
+            float: left;
+            color: #333;
+        }
+
+        .message .sender {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .message .timestamp {
+            font-size: 0.8rem;
+            color: #888;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .message .text {
+            font-size: 1rem;
+        }
+
+        .sorting-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .sorting-controls button {
+            padding: 8px 10px;
+            border: none;
+            background-color: transparent;
+            color: #007bff;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: color 0.2s ease-in-out;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .sorting-controls button:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar">
+        <div class="navbar-brand">Aldous</div>
+        <div class="navbar-buttons">
+            <button id="showUsers">Users</button>
+            <button id="showDataPanel">Data Panel</button>
+        </div>
+    </nav>
+
+    <div class="content-container">
+        <div class="user-list" id="userList">
+            <div class="user-list-header">
+                <h2>Users</h2>
+                <div class="sorting-controls">
+                    <button id="sortByMessages" title="Sort by Messages" data-order="desc">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" style="width: 1em; vertical-align: middle;">
+                            <path d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L143 64c-9.4-9.4-24.6-9.4-33.9 0L6 183c-15.1 15.1-4.4-41 17 41h238c21.4 0 32.1-25.9 17-41z"/>
+                         </svg>
+                    </button>
+                    <button id="sortByExpiry" title="Sort by Expiry Date" data-order="desc">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"  style="width: 1em; vertical-align: middle;">
+                             <path d="M128 32c0-17.7-14.3-32-32-32s-32 14.3-32 32V64H64C28.7 64 0 92.7 0 128v320c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H384V32zM416 192H32c-17.7 0-32 14.3-32 32v32c0 17.7 14.3 32 32 32H416c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32z"/>
+                         </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="user-stats">
+                <div class="user_stat">
+                    <h1 id="totalSignups">55</h1>
+                    <p>Signups</p>
+                </div>
+                <div class="user_stat">
+                    <h1 id="totaUsage">55</h1>
+                    <p>Usage</p>
+                </div>
+                <div class="user_stat">
+                    <h1 id="dailySignups">55</h1>
+                    <p>Signups/Day</p>
+                </div>
+                <div class="user_stat">
+                    <h1 id="dailyUsage">55</h1>
+                    <p>Usage/Day</p>
+                </div>
+                
+            </div>
+            <div id="userListContent">
+                <p>Loading users...</p>
+            </div>
+        </div>
+
+        <div class="user-detail-container" id="userDetailContainer">
+            <div class="user-detail" id="userDetails">
+                <h2>User Details</h2>
+                <div class="detail-grid"></div>
+                <div class="message-history"></div>
+            </div>
+        </div>
+
+        <div class="data-panel-container" id="dataPanelContainer">
+            <div class="chart-container">
+                <canvas id="userGrowthChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="messagesChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="messageTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC8l6OGrYpQCukAGuwUacdaBQ023eZNvKk",
+        authDomain: "colegios-tutor.firebaseapp.com",
+        databaseURL: "https://colegios-tutor-default-rtdb.firebaseio.com",
+        projectId: "colegios-tutor",
+        storageBucket: "colegios-tutor.firebasestorage.app",
+        messagingSenderId: "625155574256",
+        appId: "1:625155574256:web:8d5f6520468bc1ab1ef535",
+        measurementId: "G-6WDK5PS803"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
+
+    let userData = {};
+    let userList = []; // Store user data here
+    let currentSortOrder = null;
+    let userGrowthChart, messagesChart, messageTypeChart;
+
+    // Helper function to format timestamps
+    function formatTimestamp(timestamp) {
+        return new Date(timestamp * 1000).toLocaleString();
+    }
+
+    // Helper function to calculate time since a timestamp
+    function timeSince(timestamp) {
+        const now = Date.now() / 1000;
+        const seconds = now - timestamp;
+
+        const intervals = {
+            year: 31536000,
+            month: 2592000,
+            day: 86400,
+            hour: 3600,
+            minute: 60,
+            second: 1
+        };
+
+        for (const interval in intervals) {
+            const count = Math.floor(seconds / intervals[interval]);
+            if (count > 0) {
+                return `${count} ${interval}${count !== 1 ? 's' : ''} ago`;
+            }
+        }
+
+        return 'Just now';
+    }
+
+    // Function to display user details
+    function displayUserDetails(user) {
+        const detailGrid = document.querySelector('#userDetails .detail-grid');
+        const messageHistorySection = document.querySelector('#userDetails .message-history');
+
+        detailGrid.innerHTML = '';
+        messageHistorySection.innerHTML = '<h3>Message History</h3>';
+
+        // Subscription Details
+        const subscriptionSection = document.createElement('div');
+        subscriptionSection.classList.add('detail-section');
+        subscriptionSection.innerHTML = `<h3>Subscription Details</h3>`;
+        if (user.subscriptions && user.subscriptions.free_trial) {
+            const subscription = user.subscriptions.free_trial;
+            subscriptionSection.innerHTML += `
+                <p><b>Type:</b> ${subscription.subscription_type}</p>
+                <p><b>Expiry Date:</b> ${new Date(subscription.expiry_date).toLocaleString()}</p>
+                <p><b>Usage:</b> ${subscription.usage}</p>
+            `;
+        } else {
+            subscriptionSection.innerHTML += `<p>No subscription data available.</p>`;
+        }
+        detailGrid.appendChild(subscriptionSection);
+
+        // Aggregate Data
+        const aggregateSection = document.createElement('div');
+        aggregateSection.classList.add('detail-section');
+        aggregateSection.innerHTML = `<h3>Aggregate Data</h3>`;
+        const messagesCount = Object.keys(user.messages || {}).length;
+        aggregateSection.innerHTML += `<p><b>Total Messages:</b> ${messagesCount}</p>`;
+
+        let lastMessageTimestamp = 0;
+        if (user.messages) {
+            for (const messageId in user.messages) {
+                const message = user.messages[messageId];
+                if (message.timestamp > lastMessageTimestamp) {
+                    lastMessageTimestamp = message.timestamp;
+                }
+            }
+        }
+
+        const timeSinceLastMessage = lastMessageTimestamp ? timeSince(lastMessageTimestamp) : 'No messages';
+        aggregateSection.innerHTML += `<p><b>Last Message:</b> ${timeSinceLastMessage} ago</p>`;
+        detailGrid.appendChild(aggregateSection);
+
+        // Message History
+        if (user.messages) {
+            const messagesArray = Object.entries(user.messages)
+                .sort(([, a], [, b]) => a.timestamp - b.timestamp)
+                .map(([, message]) => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message', message.sender);
+                    messageDiv.innerHTML = `
+                        <div class="text">${message.text}</div>
+                        <div class="timestamp">${formatTimestamp(message.timestamp)}</div>
+                    `;
+                    return messageDiv;
+                });
+
+            messagesArray.forEach(messageDiv => messageHistorySection.appendChild(messageDiv));
+        } else {
+            messageHistorySection.innerHTML += '<p>No message history available.</p>';
+        }
+
+        messageHistorySection.scrollTop = messageHistorySection.scrollHeight;
+    }
+
+
+    // Function to fetch users data from Firebase
+    async function fetchUsersData() {
+        if (localStorage.getItem('localData')) {
+
+            const localData = JSON.parse(localStorage.getItem('localData'));
+            const timestamp = localData.timestamp;
+            const currentTime = Date.now();
+            const timeDifference = currentTime - timestamp;
+            console.log('Using local data');
+
+
+            if (timeDifference < 3600000) {
+                userData = localData['userData'];
+                userList = Object.entries(userData).map(([userId, userData]) => ({
+                    userId,
+                    ...userData
+                }));
+                return userList;
+            }
+        }
+
+        try {
+            const usersRef = ref(database, 'users');
+            const snapshot = await get(usersRef);
+
+            if (snapshot.exists()) {
+                userData = snapshot.val();
+                userList = Object.entries(userData).map(([userId, userData]) => ({
+                    userId,
+                    ...userData
+                }));
+                localStorage.setItem('localData', JSON.stringify({'userData': userData, 'timestamp': Date.now()}));
+                return userList;
+            } else {
+                console.log('No users found.');
+                return [];
+            }
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            return [];
+        }
+    }
+
+    // Function to display the list of users
+    function displayUsers(users) {
+        const userListContent = document.getElementById('userListContent');
+        userListContent.innerHTML = '';
+
+        users.forEach(user => {
+            const messagesCount = Object.keys(user.messages || {}).length;
+            const expiryDate = user.subscriptions?.free_trial?.expiry_date;
+            const expiryDateFormatted = expiryDate ? new Date(expiryDate).toLocaleDateString() : 'No Expiry';
+            const subscriptionType = user.subscriptions?.free_trial?.subscription_type || 'None';
+
+            let timeSinceLastMessage = 'No messages';
+            if (user.messages) {
+                let lastMessageTimestamp = 0;
+                for (const messageId in user.messages) {
+                    const message = user.messages[messageId];
+                    if (message.timestamp > lastMessageTimestamp) {
+                        lastMessageTimestamp = message.timestamp;
+                    }
+                }
+                timeSinceLastMessage = lastMessageTimestamp ? timeSince(lastMessageTimestamp) : 'No messages';
+            }
+
+            const userItem = document.createElement('div');
+            userItem.classList.add('user-item');
+            userItem.innerHTML = `
+                <h3>${user.userId}</h3>
+                <p>Messages: ${messagesCount}</p>
+                <p>Last Message: ${timeSinceLastMessage} ago</p>
+                <p>Subscription Type: ${subscriptionType}</p>
+                <p>Expiry Date: ${expiryDateFormatted}</p>
+            `;
+            userItem.addEventListener('click', () => displayUserDetails(user));
+            userListContent.appendChild(userItem);
+        });
+    }
+
+    // Function to sort users
+    function sortUsers(sortBy, order = 'desc') {
+        const sortedUsers = [...userList];
+
+        sortedUsers.sort((a, b) => {
+            let comparison = 0;
+
+            if (sortBy === 'messages') {
+                const messagesA = Object.keys(a.messages || {}).length;
+                const messagesB = Object.keys(b.messages || {}).length;
+                comparison = messagesB - messagesA;
+            } else if (sortBy === 'expiry') {
+                const expiryA = a.subscriptions?.free_trial?.expiry_date || 0;
+                const expiryB = b.subscriptions?.free_trial?.expiry_date || 0;
+                comparison = expiryB - expiryA;
+            }
+
+            return order === 'asc' ? -comparison : comparison;
+        });
+
+        displayUsers(sortedUsers);
+    }
+
+    // Function to fetch and display users
+    async function fetchAndDisplayUsers() {
+        const userListContent = document.getElementById('userListContent');
+        userListContent.innerHTML = '<p>Loading users...</p>';
+
+        const users = await fetchUsersData();
+        displayUsers(users);
+
+        const userGrowthData = generateUserGrowthData(userData);
+        const messageData = generateMessageData(userData);
+        const messageTypeData = generateMessageTypeData(userData);
+
+        createUserGrowthChart(userGrowthData);
+        createMessagesChart(messageData);
+        createMessageTypeChart(messageTypeData);
+    }
+
+    // Initial fetch and display
+    fetchAndDisplayUsers();
+
+    // Event listeners for sorting
+    document.getElementById('sortByMessages').addEventListener('click', () => {
+        const button = document.getElementById('sortByMessages');
+        const currentOrder = button.dataset.order;
+        const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+        button.dataset.order = newOrder;
+        sortUsers('messages', newOrder);
+    });
+
+    document.getElementById('sortByExpiry').addEventListener('click', () => {
+        const button = document.getElementById('sortByExpiry');
+        const currentOrder = button.dataset.order;
+        const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+        button.dataset.order = newOrder;
+        sortUsers('expiry', newOrder);
+    });
+
+    // Event listeners for showing panels
+    document.getElementById('showUsers').addEventListener('click', () => {
+        document.getElementById('userDetailContainer').style.display = 'flex';
+        document.getElementById('dataPanelContainer').style.display = 'none'; // Hide the data panel
+        document.getElementById('userList').style.display = 'block';
+    });
+
+    document.getElementById('showDataPanel').addEventListener('click', () => {
+        document.getElementById('userDetailContainer').style.display = 'none';
+        document.getElementById('dataPanelContainer').style.display = 'flex';  // Show the data panel as a grid
+        document.getElementById('userList').style.display = 'none';
+    });
+
+    // Data Generation Functions
+    function generateUserGrowthData(usersData) {
+        const labels = ['Users'];
+        const data = [Object.keys(usersData).length];
+        return { labels, data };
+    }
+
+    function generateMessageData(usersData) {
+        let agentMessages = 0;
+        let userMessages = 0;
+
+        for (const userId in usersData) {
+            const user = usersData[userId];
+            if (user.messages) {
+                for (const messageId in user.messages) {
+                    const message = user.messages[messageId];
+                    if (message.sender === 'agent') {
+                        agentMessages++;
+                    } else if (message.sender === 'user') {
+                        userMessages++;
+                    }
+                }
+            }
+        }
+
+        const labels = ['Agent', 'User'];
+        const data = [agentMessages, userMessages];
+        return { labels, data };
+    }
+
+    function generateMessageTypeData(usersData) {
+        const messageTypeCounts = {};
+
+        for (const userId in usersData) {
+            const user = usersData[userId];
+            if (user.messages) {
+                for (const messageId in user.messages) {
+                    const message = user.messages[messageId];
+                    const messageType = message.message_type || 'unknown';
+
+                    messageTypeCounts[messageType] = (messageTypeCounts[messageType] || 0) + 1;
+                }
+            }
+        }
+
+        const labels = Object.keys(messageTypeCounts);
+        const data = Object.values(messageTypeCounts);
+        return { labels, data };
+    }
+
+    // Chart Creation Functions
+    function createUserGrowthChart(userGrowthData) {
+        const ctx = document.getElementById('userGrowthChart').getContext('2d');
+        userGrowthChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: userGrowthData.labels,
+                datasets: [{
+                    label: 'Total Users',
+                    data: userGrowthData.data,
+                    backgroundColor: '#3498db'
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    function createMessagesChart(messageData) {
+        const ctx = document.getElementById('messagesChart').getContext('2d');
+        messagesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: messageData.labels,
+                datasets: [{
+                    label: 'Messages Sent',
+                    data: messageData.data,
+                    backgroundColor: ['#2ecc71', '#3498db']
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    function createMessageTypeChart(messageTypeData) {
+        const ctx = document.getElementById('messageTypeChart').getContext('2d');
+        messageTypeChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: messageTypeData.labels,
+                datasets: [{
+                    label: 'Message Types',
+                    data: messageTypeData.data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

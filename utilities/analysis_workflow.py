@@ -1,17 +1,13 @@
-from init.openai import openai_client
+from init.google_ai import google_client
+from google.genai import types
 
 from data.models import Message
 
 from utilities.storage import get_data
 from utilities.vector_storage import get_vectors
 
+import base64
 import time
-
-
-# image_model = 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct'
-# text_model = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
-image_model = 'accounts/fireworks/models/qwen2-vl-72b-instruct'
-text_model = 'accounts/fireworks/models/qwen2p5-72b-instruct'
 
 
 def initialize_analysis_workflow(user_message: Message) -> str:
@@ -22,13 +18,11 @@ def initialize_analysis_workflow(user_message: Message) -> str:
     user_profile_data = get_data(f'users/{user_message.phone_number}/profile')
     if user_profile_data:
         user_profile = f'This is my academic profile: {user_profile_data}'
-        print(user_profile)
     
     memories_data = get_vectors(user=user_message.phone_number, timestamp=timestamp)
     relevant_memories = ''
     if memories_data:
         relevant_memories = f'These memories from the past 7 days are relevant to creation of my analysis: {memories_data["documents"]}'
-        print(relevant_memories)
 
     system_prompt = f'''
         You are a student progress analyst specialized in creating comprehensive learning analyses. You will generate a detailed examination of a student's current learning status, identifying strengths, weaknesses, and strategic development plans. Your response must be strictly in the specified format with no additional text.
@@ -85,24 +79,30 @@ def initialize_analysis_workflow(user_message: Message) -> str:
         - Maintain consistent structure between sections
     '''
 
-    user_prompt = '''
+    user_prompt = f'''
         RELEVNAT CONTEXT:
         {relevant_memories}
         {user_profile}
     '''
 
-    model = text_model
-    system_content = [{'type': 'text', 'text': system_prompt}]
-    user_content = [{'type': 'text', 'text': user_prompt}]
+    if user_message.message_type == 'image':
+        image_data = base64.b64decode(user_message.media_content)
+        contents=[user_prompt, types.Part.from_bytes(data=image_data, mime_type='image/png')]
+    else:
+        contents = user_prompt
 
-    if user_message.media_content and user_message.message_type == 'image':
-        model = image_model
-        user_content.insert(0, {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{user_message.media_content}'}})
+    response = google_client.models.generate_content(
+        model='gemini-2.0-flash',
+        # model='learnlm-1.5-pro-experimental',
+        contents=contents,
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            temperature=0.3,
+        ),
+    )
 
-    response = openai_client.chat.completions.create(model=model, messages=[{'role': 'system', 'content': system_content}, {'role': 'user', 'content': user_content}])
+    user_message.tokens += response.usage_metadata.total_token_count
+    user_message.input_tokens += response.usage_metadata.prompt_token_count
+    user_message.output_tokens += response.usage_metadata.candidates_token_count
 
-    print('TOTAL ANALYSIS TOKENS')
-    user_message.tokens += response.usage.total_tokens
-    print(user_message.tokens)
-
-    return response.choices[0].message.content
+    return response.text

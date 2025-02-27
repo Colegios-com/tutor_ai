@@ -4,6 +4,7 @@ cryptography
 fastapi
 firebase_admin
 fireworks-ai
+google-genai
 gunicorn
 json_repair
 openai

@@ -225,7 +225,7 @@
         }
 
         .section-title {
-            font-size: clamp(36px, 8vw, 80px);
+            font-size: clamp(36px, 8vw, 60px);
             font-weight: 900;
             color: var(--dark);
             text-align: center;
@@ -261,7 +261,7 @@
         .whatsapp-btn {
             height: clamp(50px, 10vw, 80px);
             padding: 0 clamp(20px, 5vw, 50px);
-            font-size: clamp(18px, 4vw, 30px);
+            font-size: clamp(18px, 4vw, 25px);
             font-weight: 800;
             gap: 15px;
             max-width: min(400px, 90%);
@@ -301,7 +301,7 @@
         }
 
         .logo {
-            font-family: 'IntroScript', sans-serif;
+            font-family: 'Mont', sans-serif;
             font-size: 30px;
             font-weight: 900;
             color: var(--dark);
@@ -411,7 +411,7 @@
         }
 
         .hero p {
-            font-size: clamp(20px, 4vw, 30px);
+            font-size: clamp(36px, 8vw, 80px);
             font-weight: 600;
             color: var(--dark);
             max-width: min(1000px, 90%);
@@ -424,7 +424,7 @@
             align-items: center;
             gap: clamp(20px, 5vw, 50px);
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -1133,7 +1133,7 @@
     </div>
 
     <nav class="navbar">
-        <a href="#" class="logo">🖍️ colegios.com</a>
+        <a href="#" class="logo">Aldous</a>
         <div class="nav-links">
             <a href="#preview" class="nav-link">Producto</a>
             <a href="#testimonials" class="nav-link">Comentarios</a>
@@ -1141,8 +1141,7 @@
             <a href="#prices" class="nav-link">Precios</a>
             <a href="#whitepaper" class="nav-link">Whitepaper</a>
             <a class="nav-whatsapp-btn">
-                <span>Comienza</span>
-                <span>📱</span>
+                <span>Ver Planes</span>
             </a>
         </div>
         <div class="hamburger">☰</div>
@@ -1155,18 +1154,17 @@
             <a href="#prices" class="nav-link">Precios</a>
             <a href="#whitepaper" class="nav-link">Whitepaper</a>
         <a class="nav-whatsapp-btn">
-            <span>Comienza</span>
-            <span>📱</span>
+            <span>Ver Planes</span>
         </a>
     </div>
 
     <section class="hero">
         <div class="hero-content">
-            <h1>Aldous</h1>
-            <p>Tu tutor IA personalizado. Por WhatsApp. 24/7 🙌</p>
+            <!-- <h1>Aldous</h1> -->
+            <p>El mejor tutor IA. Por WhatsApp. 24/7 🙌</p>
             <div class="cta-container">
-                <a class="whatsapp-btn">
-                    <span>Comienza Hoy</span>
+                <a class="whatsapp-btn" href="https://wa.me/message/CR5FBWBZOWRCN1">
+                    <span>Habla con Aldous</span>
                     <span class="bounce-text">📱</span>
                 </a>
             </div>
@@ -1444,7 +1442,7 @@
             <div class="price-card">
                 <h3>Básico</h3>
                 <div class="price">$9<span>/mes</span></div>
-                <div class="price-compare">Menos que una tutoría particular</div>
+                <div class="price-compare">Lo esencial para que resuelvas todas tus dudas</div>
                 <ul>
                     <li>Consultas ilimitadas</li>
                     <li>Todos los grados</li>
@@ -1459,9 +1457,9 @@
             </div>
             <div class="price-card popular">
                 <div class="popular-badge">Beta</div>
-                <h3>Completo</h3>
+                <h3>Más Popular</h3>
                 <div class="price">$19<span>/mes</span></div>
-                <div class="price-compare">Menos que dos tutorías particulares</div>
+                <div class="price-compare">Más funciones para que impulses tu aprendizaje</div>
                 <ul>
                     <li>Consultas ilimitadas</li>
                     <li>Todos los grados</li>
@@ -1475,14 +1473,14 @@
                     <li>Soporte por email</li>
                 </ul>
                 <a href="https://app.recurrente.com/s/colegios-com/plan-pro" class="whatsapp-btn">
-                    Únete al Beta
+                    Comienza Hoy
                 </a>
             </div>
             <div class="price-card">
                 <div class="popular-badge">Pronto</div>
                 <h3>Ultimate</h3>
                 <div class="price">$29<span>/mes</span></div>
-                <div class="price-compare">Menos que una tutoría particular para 3 estudiantes</div>
+                <div class="price-compare">Todo lo que puedas necesitar para ser un alumno estrella</div>
                 <ul>
                     <li>Consultas ilimitadas</li>
                     <li>Todos los grados</li>
@@ -1523,7 +1521,7 @@
             </div>
             <form class="whitepaper-form" id="whitepaperForm">
                 <input type="email" placeholder="Tu correo electrónico" required>
-                <button type="submit" class="whatsapp-btn">
+                <button class="whatsapp-btn" type="submit">
                     <span>Enviar</span>
                     <span>📚</span>
                 </button>
@@ -1563,7 +1561,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyC8l6OGrYpQCukAGuwUacdaBQ023eZNvKk",
             authDomain: "colegios-tutor.firebaseapp.com",
@@ -1574,17 +1572,15 @@
             appId: "1:625155574256:web:8d5f6520468bc1ab1ef535",
             measurementId: "G-6WDK5PS803"
         };
-
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
-
+    
         const navbar = document.querySelector('.navbar');
         const hamburger = document.querySelector('.hamburger');
         const mobileMenu = document.querySelector('.mobile-menu');
-        const scrollIndicators = document.querySelectorAll('.whatsapp-btn:not(.price-card .whatsapp-btn), .nav-whatsapp-btn');
-
-        window.addEventListener('scroll', () => {
+        const scrollIndicators = document.querySelectorAll('.whatsapp-btn:not(#whitepaperForm .whatsapp-btn):not(.hero .cta-container .whatsapp-btn), .nav-whatsapp-btn');        window.addEventListener('scroll', () => {
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');
             } else {
@@ -1592,48 +1588,59 @@
             }
         });
 
-        // Modified this part to exclude pricing buttons from scroll behavior
+
+
+        document.querySelectorAll('.hero .cta-container .whatsapp-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                // Register Facebook Pixel event
+                fbq('track', 'StartTrial');
+            });
+        });
+
+    
+        // Modified this part to exclude pricing buttons and whitepaper form button from scroll behavior
         scrollIndicators.forEach(button => {
             button.addEventListener('click', () => {
                 const featuresSection = document.querySelector('#prices');
                 featuresSection.scrollIntoView({ behavior: 'smooth' });
+                fbq('track', 'ViewContent', { content_name: 'Features Section' });
             });
         });
-
+    
         // Add phone popup functionality to pricing buttons
         document.querySelectorAll('.price-card .whatsapp-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 const originalUrl = button.getAttribute('href');
                 showPhonePopup(originalUrl);
+                fbq('track', 'AddToCart', { content_name: button.textContent.trim() });
             });
         });
-
+    
         function showPhonePopup(paymentUrl) {
             const popup = document.getElementById('phonePopup');
             const continueButton = document.getElementById('continueToPayment');
             const understandingCheckbox = document.getElementById('understandingConfirmation');
             const termsCheckbox = document.getElementById('termsConfirmation');
             const closeButton = popup.querySelector('.close-button');
-
-
+    
             // Reset checkbox states when opening popup
             resetPopup();
             popup.style.display = 'flex';
-
+    
             function validateForm() {
                 const isValid = understandingCheckbox.checked && termsCheckbox.checked;
                 continueButton.disabled = !isValid;
                 continueButton.classList.toggle('enabled', isValid);
             }
-
+    
             function resetPopup() {
                 understandingCheckbox.checked = false;
                 termsCheckbox.checked = false;
                 continueButton.disabled = true;
                 continueButton.classList.remove('enabled');
             }
-
+    
             function closePopup() {
                 popup.style.display = 'none';
                 resetPopup();
@@ -1645,56 +1652,59 @@
                 popup.removeEventListener('click', handleOutsideClick);
                 document.removeEventListener('keydown', handleEscape);
             }
-
+    
             function handleContinue() {
                 if (!continueButton.disabled) {
-                    fbq('track', 'InitiateCheckout', {url: paymentUrl});
+                    fbq('track', 'InitiateCheckout');
                     closePopup();
                     window.location.href = paymentUrl;
                 }
             }
-
+    
             function handleOutsideClick(e) {
                 if (e.target === popup) {
                     closePopup();
                 }
             }
-
+    
             function handleEscape(e) {
                 if (e.key === 'Escape' && popup.style.display === 'flex') {
                     closePopup();
                 }
             }
-
+    
             // Add event listeners
             [understandingCheckbox, termsCheckbox].forEach(element => {
                 element.addEventListener('input', validateForm);
             });
-
+    
             closeButton.addEventListener('click', closePopup);
             popup.addEventListener('click', handleOutsideClick);
             continueButton.addEventListener('click', handleContinue);
             document.addEventListener('keydown', handleEscape);
         }
-
+    
         hamburger.addEventListener('click', () => {
             mobileMenu.classList.toggle('active');
+            fbq('track', 'Click', { content_name: 'Mobile Menu Open' });
         });
-
+    
         document.querySelectorAll('.mobile-menu .nav-link, .mobile-menu .nav-whatsapp-btn').forEach(link => {
             link.addEventListener('click', () => {
                 mobileMenu.classList.remove('active');
+                fbq('track', 'Click', { content_name: link.textContent.trim() });
             });
         });
-
+    
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.mobile-menu') && 
                 !e.target.closest('.hamburger') && 
                 mobileMenu.classList.contains('active')) {
                 mobileMenu.classList.remove('active');
+                fbq('track', 'Click', { content_name: 'Mobile Menu Close' });
             }
         });
-
+    
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -1706,18 +1716,19 @@
                         top: targetPosition - navHeight,
                         behavior: 'smooth'
                     });
+                    fbq('track', 'Click', { content_name: this.textContent.trim() });
                 }
             });
         });
-
+    
         document.querySelectorAll('.preview-feature').forEach(feature => {
             feature.addEventListener('click', () => {
                 document.querySelectorAll('.preview-feature').forEach(f => {
                     f.classList.remove('active');
                 });
-                
+    
                 feature.classList.add('active');
-                
+    
                 const featureId = feature.dataset.feature;
                 document.querySelectorAll('.demo-video').forEach(video => {
                     if (video.dataset.feature === featureId) {
@@ -1728,9 +1739,10 @@
                         unloadVideo(video);
                     }
                 });
+                fbq('track', 'SelectItem', { content_name: featureId });
             });
         });
-
+    
         function loadVideo(videoElement) {
             if (!videoElement.querySelector('source')) {
                 const source = document.createElement('source');
@@ -1741,27 +1753,28 @@
                 videoElement.play();
             }
         }
-
+    
         function unloadVideo(videoElement) {
             videoElement.pause();
             videoElement.innerHTML = '';
             videoElement.load();
         }
-
+    
         function loadActiveVideo() {
             const activeVideo = document.querySelector('.demo-video.active');
             if (activeVideo) {
                 loadVideo(activeVideo);
             }
         }
-
+    
         document.getElementById('whitepaperForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = this.querySelector('input[type="email"]').value;
-            alert('¡Gracias! El whitepaper será enviado a ' + email);
-            this.reset();
+            e.preventDefault();  // Prevent the default form submission behavior
+            const pdfUrl = "https://colegios-media.s3.us-east-1.amazonaws.com/documents/whitePaper.pdf";
+            window.open(pdfUrl, '_blank');  // Open the PDF in a new tab
+            this.reset();  // Reset the form
+            fbq('track', 'Lead', { content_name: 'Whitepaper Download' });
         });
-
+    
         document.addEventListener('DOMContentLoaded', loadActiveVideo);
     </script>
     <script type="application/ld+json">

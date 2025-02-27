@@ -7,7 +7,7 @@ import init.firebase
 from typing import Optional
 
 # Utilities
-from utilities.account import save_user, verify_subscription, verify_access
+from utilities.account import save_user, verify_subscription, update_usage
 from utilities.analysis_workflow import initialize_analysis_workflow
 from utilities.cryptography import decrypt_request, encrypt_response
 from utilities.evaluation_workflow import initialize_evaluation_workflow
@@ -16,6 +16,8 @@ from utilities.memory_workflow import initialize_memory_workflow
 from utilities.storage import save_data, get_data
 from utilities.tutor_workflow import initialize_tutor_workflow
 from utilities.whatsapp import verify_message, build_user_message, build_response_message, check_message
+
+from utilities.guide import create_guide
 
 # Async
 from fastapi import Request, Response, Query, BackgroundTasks, HTTPException
@@ -63,10 +65,10 @@ def verify(authorization_token):
         raise HTTPException(status_code=401, detail='Token verification failed.')
 
 
-@app.post('/public_key/')
-def whatsapp_public_key():
-    response = whatsapp_client.add_public_key()
-    return response
+# @app.post('/public_key/')
+# def whatsapp_public_key():
+#     response = whatsapp_client.add_public_key()
+#     return response
 
 
 # @app.get('/webhooks/')
@@ -106,19 +108,33 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     user_message = build_user_message(payload)
 
     subscription_type = verify_subscription(user_message.phone_number)
-    if not subscription_type:
+    if subscription_type == 'new_user':
+        with open(f'images/welcomeBanner.png', 'rb') as file:
+            file_content = file.read()
+        media_id = whatsapp_client.upload_media(message=user_message, file_content=file_content, file_name='image.png', file_type='image/png')
+        raw_response = '¡Bienvenido! 🎉 *Soy Aldous, tu tutor virtual*. Tu prueba de 7 días está activada. ✅\n\nVeo que ya estás listo para aprender. *¿Cómo puedo ayudarte?*\n\nAquí te muestro algunas cosas que puedo hacer con tu plan actual (Starter):\n\n✨ **Procesamiento de Imágenes:** Envíame una foto de un problema matemático 📸 y te ayudaré a resolverlo. Por ejemplo: "Calcula el área de este triángulo".\n\n🎤 **Notas de Voz:** Explícame un tema en un audio 🗣️ y te daré un resumen o responderé tus preguntas. Por ejemplo: "Resume esta teoria sobre la relatividad".\n\n💬 **Conversación Natural:** ¡Habla conmigo como si estuvieras chateando con un amigo! Soy bueno para responder preguntas y explicar conceptos. Por ejemplo: "Explícame la diferencia entre mitosis y meiosis".\n\n¿Quieres aún más poder? 💪 Con los planes Pro y Unlimited, también puedes:\n\n📚 **Procesamiento de Documentos:** Comparte un documento 📝 (PDF, TXT) y te ayudaré a encontrar información clave o responder preguntas. Ejemplo: "Extrae los puntos principales de este PDF".\n\n📝 **Generación de Quizzes:** Pídeme que cree un cuestionario sobre cualquier tema. Ejemplo: "Crea un quiz sobre la Revolución Francesa".\n\n🗺️ **Generación de Guías:** Obtén una guía completa y detallada sobre un tema. Ejemplo: "Genera una guía sobre programación en Python".\n\n📊 **Generación de Análisis:** Analiza datos, textos o cualquier información que me proporciones. Ejemplo: "Analiza este texto y determina el sentimiento".\n\n¡Explora todo lo que puedo hacer y decide qué plan es perfecto para ti! 😉 ¡Estoy listo para empezar cuando tú lo estés! 🚀'
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='image', media_id=media_id)
+        response = whatsapp_client.send_media(message=response_message, media_id=response_message.media_id, file_name='image.png', file_type='image', caption=raw_response)
+        whatsapp_client.send_reaction(user_message=user_message, reaction='😂')
+        return 'New user.'
+    elif not subscription_type:
+        raw_response = 'Rayos! Tu suscripción ha caducado. Reactívala para disfrutar nuestro servicio. 🚀\n\n👉 https://app.recurrente.com/s/colegios-com/plan-pro'
+        response_message = build_response_message(user_message=user_message, raw_response=raw_response)
+        response = whatsapp_client.send_message(response_message=response_message)
+        random_reaction = '💸'
+        whatsapp_client.send_reaction(user_message=user_message, reaction=random_reaction)
         return 'Subscription not found.'
+    
 
     if check_message(user_message):
         return 'Message already exists.'
     
-    debug = verify_access(user_message.phone_number)
 
     whatsapp_client.send_reaction(user_message=user_message, reaction='💭')
 
     # Starter Features
-    if user_message.message_type in ['text', 'image', 'audio']:
-        raw_response = initialize_tutor_workflow(user_message=user_message, debug=debug)
+    if user_message.message_type in ['text', 'image', 'audio', 'video']:
+        raw_response = initialize_tutor_workflow(user_message=user_message)
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
     elif user_message.message_type == 'sticker':
@@ -137,7 +153,7 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         response = whatsapp_client.send_message(response_message=response_message)
     # Pro Features
     elif user_message.message_type == 'document' and subscription_type in ['pro', 'unlimited', 'tester']:
-        raw_response = initialize_tutor_workflow(user_message=user_message, debug=debug)
+        raw_response = initialize_tutor_workflow(user_message=user_message)
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
     # Pro Commands
@@ -146,41 +162,6 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         raw_response = f'Claro! Aquí tienes tu guia personalizado 📝 \n\nhttps://aldous.colegios.com/guide/{guide_id}/{sign(user_message.phone_number)}/'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
-
-
-
-    # elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
-    #     components = [
-    #         {
-    #             'type': 'body',
-    #             'parameters': [
-    #                 {
-    #                     'type': 'text',
-    #                     'parameter_name': 'first_name',
-    #                     'text': 'Dudu',
-    #                 },
-    #             ],
-    #         },
-    #         {
-    #             'type': 'button',
-    #             'sub_type': 'flow',
-    #             'index': '0',
-    #             'parameters': [
-    #                 {
-    #                     'type': 'action',
-    #                     'action': {
-                 
-    #                     }
-    #                 }
-    #             ]
-    #         }
-    #     ]
-    #     whatsapp_client.send_template(phone_number=user_message.phone_number, template_name='test_flow', components=components)
-    #     random_reaction = random.choice(['🖍️', '✏️', '🖊️'])
-    #     whatsapp_client.send_reaction(user_message=user_message, reaction=random_reaction)
-    #     return True
-
-        
     elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
         evaluation_id = initialize_evaluation_workflow(user_message=user_message)
         raw_response = f'Claro! Aquí tienes tu examen personalizado 📝 \n\nhttps://aldous.colegios.com/evaluation/{evaluation_id}/{sign(user_message.phone_number)}/'
@@ -194,7 +175,7 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         response_message = build_response_message(user_message=user_message, raw_response=raw_response, message_type='document', media_id=media_id, media_content=analysis_text)
         response = whatsapp_client.send_media(message=user_message, media_id=media_id, file_name='analisisPersonalizado.md', file_type='document', caption='Aquí está tu análisis personalizado. 🧠')
     # Unsupported/Unsuscribed Features
-    elif user_message.message_type == 'unsupported':
+    elif 'unsupported' in user_message.message_type:
         raw_response = 'Lo siento, no puedo procesar este tipo de mensaje aún. He tomado nota y trabajaré para agregar soporte en el futuro. 🤖'
         response_message = build_response_message(user_message=user_message, raw_response=raw_response)
         response = whatsapp_client.send_message(response_message=response_message)
@@ -211,9 +192,10 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     
     response_message.id = response['messages'][0]['id'].replace('wamid.', '')
 
-    background_tasks.add_task(initialize_memory_workflow, user_message, response_message)
     random_reaction = random.choice(['🖍️', '✏️', '🖊️'])
     whatsapp_client.send_reaction(user_message=user_message, reaction=random_reaction)
+    initialize_memory_workflow(user_message, response_message)
+    update_usage(user_message)
 
     return True
 
@@ -292,3 +274,48 @@ async def flow_test(request: Request, background_tasks: BackgroundTasks):
         return Response(content=encrypted_response, media_type='text/plain')
     except:
         return 'Unauthorized request.'
+    
+
+@app.get('/guide_test/')
+def bot_test(request: Request):
+    try:
+        response = create_guide()
+        return response
+    except:
+        return 'Unauthorized request.'
+    
+
+
+    
+
+
+    # elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
+    #     components = [
+    #         {
+    #             'type': 'body',
+    #             'parameters': [
+    #                 {
+    #                     'type': 'text',
+    #                     'parameter_name': 'first_name',
+    #                     'text': 'Dudu',
+    #                 },
+    #             ],
+    #         },
+    #         {
+    #             'type': 'button',
+    #             'sub_type': 'flow',
+    #             'index': '0',
+    #             'parameters': [
+    #                 {
+    #                     'type': 'action',
+    #                     'action': {
+                 
+    #                     }
+    #                 }
+    #             ]
+    #         }
+    #     ]
+    #     whatsapp_client.send_template(phone_number=user_message.phone_number, template_name='test_flow', components=components)
+    #     random_reaction = random.choice(['🖍️', '✏️', '🖊️'])
+    #     whatsapp_client.send_reaction(user_message=user_message, reaction=random_reaction)
+    #     return True

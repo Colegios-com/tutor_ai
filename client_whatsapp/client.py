@@ -173,6 +173,7 @@ class WhatsappClient:
             if response.status_code == 200:
                 return response.json()
             else:
+                print(response.text)
                 raise Exception
         except Exception as e:
             return {'status': False, 'message': f'Error sending message: {e}'}
@@ -278,7 +279,7 @@ class WhatsappClient:
             if file_type == 'image':
                 payload['image'] = {
                     'id': media_id,
-                    'caption': 'Imagen Generado',
+                    'caption': caption,
                 }
             elif file_type == 'sticker':
                 payload['sticker'] = {

@@ -74,9 +74,8 @@ def build_user_message(payload: dict) -> Message:
         elif 'image' in message:
             media_id = message['image']['id']
             media_url = whatsapp_client.get_media_url(id=media_id)
-            media_content = whatsapp_client.convert_to_base64(
-                file=whatsapp_client.download_media(url=media_url)
-            )
+            file = whatsapp_client.download_media(url=media_url)
+            media_content = whatsapp_client.convert_to_base64(file=file)
             
             return Message(
                 **base_data,
@@ -86,12 +85,26 @@ def build_user_message(payload: dict) -> Message:
                 media_content=media_content,
             )
         
+        elif 'video' in message:
+            media_id = message['video']['id']
+            media_url = whatsapp_client.get_media_url(id=media_id)
+            file = whatsapp_client.download_media(url=media_url)
+            media_content = whatsapp_client.convert_to_base64(file=file)
+            
+            return Message(
+                **base_data,
+                message_type='video',
+                text=message['video'].get('caption', 'User sent video. Build your response based on the video and the context.'),
+                media_id=media_id,
+                media_content=media_content,
+            )
+        
         elif 'sticker' in message:
             media_id = message['sticker']['id']
             media_url = whatsapp_client.get_media_url(id=media_id)
-            media_content = whatsapp_client.convert_to_base64(
-                file=whatsapp_client.download_media(url=media_url)
-            )
+            file = whatsapp_client.download_media(url=media_url)
+            media_content = whatsapp_client.convert_to_base64(file=file)
+
             return Message(
                 **base_data,
                 message_type='sticker',
@@ -120,8 +133,9 @@ def build_user_message(payload: dict) -> Message:
             media_id = message['document']['id']
             media_url = whatsapp_client.get_media_url(id=media_id)
             file_type = message['document']['mime_type']
+            file = whatsapp_client.download_media(url=media_url)
             media_content = parser.parse(
-                file_bytes=whatsapp_client.download_media(url=media_url),
+                file_bytes=file,
                 file_type=file_type,
             )
             
@@ -133,13 +147,20 @@ def build_user_message(payload: dict) -> Message:
                 media_content=media_content,
             )
         else:
-            raise ValueError('Lo siento, no puedo procesar este tipo de mensaje aún. He tomado nota y trabajaré para agregar soporte en el futuro.')
+            raise ValueError('Unprocessable message type.')
         
     except Exception as error_message:
+        message_type = message.get('type', 'unknown')
+
+        if message_type != 'unknown':
+            text = message[message_type].get('caption', 'Unable to retrieve message for message type.')
+        else:
+            text = error_message
+
         return Message(
             **base_data,
-            message_type='unsupported',
-            text=str(error_message),
+            message_type=f'unsupported/{message_type}',
+            text=text,
         )
 
 
