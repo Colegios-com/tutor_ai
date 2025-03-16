@@ -19,7 +19,8 @@ def init_firebase():
 
     certificate = credentials.Certificate(key)
     firebase_admin.initialize_app(certificate, {
-        'databaseURL': 'https://colegios-tutor-default-rtdb.firebaseio.com/test/'
+        'databaseURL': 'https://colegios-tutor-default-rtdb.firebaseio.com/test/',
+        'storageBucket': 'colegios-tutor.firebasestorage.app',
     })
 
 init_firebase()

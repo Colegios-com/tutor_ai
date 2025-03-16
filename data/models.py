@@ -11,7 +11,8 @@ class Message(BaseModel):
     text: str
     context: Optional[str] = None
     media_id: Optional[str] = None
-    media_content: Optional[str] = None
+    media_url: Optional[str] = None
+    media_mime_type: Optional[str] = None
     tokens: int = 0
     input_tokens: int = 0
     output_tokens: int = 0

@@ -1,3 +1,4 @@
+
 from init.openai import openai_client
 
 from io import BytesIO
@@ -5,6 +6,7 @@ from io import BytesIO
 import requests
 import base64
 import json
+import random
 
 
 class WhatsappClient:
@@ -84,8 +86,10 @@ class WhatsappClient:
             return f'Error making request: {e}'
     
 
-    def send_reaction(self, user_message, reaction):
+    def send_reaction(self, user_message, reaction=None):
         try:
+            if not reaction:
+                reaction = random.choice(['🖍️', '✏️', '🖊️'])
             headers = {
                 'Authorization': f'Bearer {self.key}',
                 'Content-Type': 'application/json'
@@ -192,7 +196,7 @@ class WhatsappClient:
             
             if response.status_code == 200:
                 media_data = response.json()
-                return media_data['url']
+                return media_data['url'], media_data['mime_type']
             else:
                 raise Exception
         except Exception as e:
