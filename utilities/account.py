@@ -85,18 +85,31 @@ def create_free_trial(user_message: Message):
     # Add subscription
 
     SPECIAL_CODES = {
-        'CHISTORRO': {
+        'H9': {
+            'trial_days': 7,
+            'subscription_type': 'pro',
+            'onboarding': 'Homework Helper',
+        },
+        'E2': {
+            'trial_days': 7,
+            'subscription_type': 'pro',
+            'onboarding': 'Exam Prep',
+        },
+        'L4': {
             'trial_days': 14,
             'subscription_type': 'pro',
+            'onboarding': 'Better Learning',
         },
-        'ALP': {
-            'trial_days': 180,
-            'subscription_type': 'tester',
+        'G3': {
+            'trial_days': 14,
+            'subscription_type': 'pro',
+            'onboarding': 'Grade Improvement',
         },
     }
     
-    subscription_type = 'pro'  # Default subscription type
     trial_days = 7  # Default trial period
+    subscription_type = 'pro'  # Default subscription type
+    onboarding = 'General Help'
     
     # Try to extract code between delimiters
     special_code_match = re.search(r"\*(.*?)\*", user_message.text)
@@ -108,14 +121,23 @@ def create_free_trial(user_message: Message):
         if special_code in SPECIAL_CODES:
             trial_days = SPECIAL_CODES[special_code]['trial_days']
             subscription_type = SPECIAL_CODES[special_code]['subscription_type']
+            onboarding = SPECIAL_CODES[special_code]['onboarding']
         else:
             # Check if it's a referral code (assume it's a phone number)
-            referrer_phone = special_code
-            if handle_referral(referrer_phone):
+            if handle_referral(special_code):
+                onboarding = f'Referral Code: {special_code}'
                 trial_days = 14
     
     expiry_date = str(datetime.now() + timedelta(days=trial_days))
-    subscription_data = {'subscription_type': subscription_type, 'usage': 0, 'tokens': 0, 'input_tokens': 0, 'output_tokens': 0, 'expiry_date': expiry_date}
+    subscription_data = {
+        'subscription_type': subscription_type,
+        'usage': 0,
+        'tokens': 0,
+        'input_tokens': 0,
+        'output_tokens': 0,
+        'expiry_date': expiry_date,
+        'onboarding': onboarding,
+    }
     url = f'users/{user_message.phone_number}/subscriptions/free_trial'
     save_data(url, subscription_data)
 
