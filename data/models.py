@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
+
 class Message(BaseModel):
     id: str
     phone_number_id: str

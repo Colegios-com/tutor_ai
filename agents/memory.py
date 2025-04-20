@@ -1,14 +1,12 @@
 from init.google_ai import google_client
 from google.genai import types
 
-from utilities.account import update_usage
-from storage.embedding import embed_data
-from storage.storage import save_data, download_file
-from storage.vector_storage import query_vectors, save_vectors
+from utilities.usage import update_memories, update_messages, update_usage, update_last_interaction
+from storage.storage import download_file
+from storage.vector_storage import query_vectors
 
 from data.models import Message
 
-import base64
 
 def initialize_memory_workflow(user_message: Message, response_message: Message) -> str:    
     contents = []
@@ -80,11 +78,10 @@ def initialize_memory_workflow(user_message: Message, response_message: Message)
 
     response = google_client.models.generate_content(
         model='gemini-2.0-flash',
-        # model='learnlm-1.5-pro-experimental',
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            temperature=0.3,
+            temperature=0.1,
         ),
     )
 
@@ -93,20 +90,6 @@ def initialize_memory_workflow(user_message: Message, response_message: Message)
     user_message.output_tokens += response.usage_metadata.candidates_token_count
 
     update_usage(user_message)
-
-    memory = response.text
-
-    embeddings = embed_data([memory])
-    metadata = {'user': user_message.phone_number, 'context_type': 'general'}
-
-    if user_message.media_id:
-        metadata['media_id'] = user_message.media_id
-
-    save_vectors(metadata=metadata, data=[memory], embeddings=embeddings)
-
-    last_interaction_url = f'users/{user_message.phone_number}/last_interaction'
-    message_url = f'users/{user_message.phone_number}/messages/{user_message.id.replace('wamid.', '')}'
-    response_url = f'users/{user_message.phone_number}/messages/{response_message.id.replace('wamid.', '')}'
-    save_data(last_interaction_url, {'timestamp': user_message.timestamp, 'user_message': user_message.dict(), 'response_message': response_message.dict()})
-    save_data(message_url, user_message.dict())
-    save_data(response_url, response_message.dict())
+    update_memories(response.text, user_message)
+    update_messages([user_message, response_message])
+    update_last_interaction(user_message, response_message)

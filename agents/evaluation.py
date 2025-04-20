@@ -46,6 +46,33 @@ def initialize_evaluation_workflow(user_message: Message) -> str:
             role = 'user' if context_data['sender'] == 'user' else 'model'
             contents.append(types.Content(parts=parts, role=role))
 
+    # Retrieve previous messages if no context is provided  
+    if not user_message.context:
+        previous_messages = get_data(f'users/{user_message.phone_number}/messages', order_by='timestamp', limit=20)
+        if previous_messages:
+            for _, previous_message_data in previous_messages.items():
+                parts = []
+                previous_message_text = previous_message_data['text']
+                parts.append(types.Part.from_text(text=previous_message_text))
+                if previous_message_data['message_type'] == 'document' and previous_message_data['media_url']:
+                    previous_message_content = f'The accompanying document is attached to the last message you sent me.'
+                    parts.append(types.Part.from_text(text=previous_message_content))
+                    file = download_file(previous_message_data['media_url'])
+                    parts.append(types.Part.from_bytes(data=file, mime_type=previous_message_data['media_mime_type']))
+                elif previous_message_data['message_type'] == 'image' and previous_message_data['media_url']:
+                    previous_message_content = f'The accompanying image is attached to the last message you sent me.'
+                    parts.append(types.Part.from_text(text=previous_message_content))
+                    file = download_file(previous_message_data['media_url'])
+                    parts.append(types.Part.from_bytes(data=file, mime_type=previous_message_data['media_mime_type']))
+                elif previous_message_data['message_type'] == 'video' and previous_message_data['media_url']:
+                    previous_message_content = f'The accompanying video is attached to the last message you sent me.'
+                    parts.append(types.Part.from_text(text=previous_message_content))
+                    file = download_file(previous_message_data['media_url'])
+                    parts.append(types.Part.from_bytes(data=file, mime_type=previous_message_data['media_mime_type']))
+                
+                role = 'user' if previous_message_data['sender'] == 'user' else 'model'
+                contents.append(types.Content(parts=parts, role=role))
+
     # Retrieve relevant memories if no context is provided
     if not user_message.context:
         memories = query_vectors(data=user_message.text, user=user_message.phone_number)
@@ -70,33 +97,59 @@ def initialize_evaluation_workflow(user_message: Message) -> str:
         file = download_file(user_message.media_url)
         parts.append(types.Part.from_bytes(data=file, mime_type=user_message.media_mime_type))
 
-    contents.append(types.Content(parts=parts, role='user'))
+    contents.append(types.Content(parts=parts, role='user'))        
 
     system_prompt = f'''
-        You are an evaluation generator specialized in creating progressive-difficulty assessments. You will generate exactly 10 questions based on the provided topic, starting with foundational concepts and gradually increasing in complexity. Your response must be strictly in the specified JSON format with no additional text.
+        You are an expert evaluation generator specialized in creating adaptive, progressive-difficulty assessments. You will generate exactly 10 multiple-choice questions based on the provided topic, starting with foundational concepts and gradually increasing in complexity. Your response must be strictly in the specified JSON format with no additional text.
 
         # REQUIREMENTS
         - The evaluation must be in the same language as the user's message and provided context
-        - Generate exactly 10 questions
-        - Start with basic concepts (questions 1-3)
-        - Progress to intermediate applications (questions 4-7)
-        - End with advanced concepts and analysis (questions 8-10)
-        - Each question must include a detailed explanation
-        - All answers must be unambiguous
-        - Options must be plausible and distinct
-        - Follow the exact JSON structure provided
-
-        # RESPONSE TEMPLATE
-        {{"questions": [{{"id": "[unique sequential number]", "question": "[clear, specific question]", "options": {{"a": "[option text]", "b": "[option text]", "c": "[option text]", "d": "[option text]"}}, "correct": "[a,b,c, or d]", "explanation": "[detailed explanation of correct answer]"}}]}}
+        - Generate exactly 10 questions that thoroughly assess understanding of the topic
+        - Start with basic concepts and definitions (questions 1-3)
+        - Progress to intermediate applications and problem-solving (questions 4-7)
+        - End with advanced concepts, analysis, and synthesis (questions 8-10)
+        - Each question must include a detailed explanation that teaches the concept
+        - All answers must be unambiguous with only one clearly correct option
+        - Distractors (wrong options) must be plausible, distinct, and based on common misconceptions
+        - Questions should assess different cognitive levels (recall, application, analysis)
+        - Ensure questions are culturally neutral and accessible to diverse learners
     '''
 
     response = google_client.models.generate_content(
         model='gemini-2.0-flash',
-        # model='learnlm-1.5-pro-experimental',
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            temperature=0.3,
+            temperature=0.1,
+            response_mime_type='application/json',
+            response_schema={
+                "type": "object",
+                "properties": {
+                    "questions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "integer"},
+                                "question": {"type": "string"},
+                                "options": {
+                                    "type": "object",
+                                    "properties": {
+                                        "a": {"type": "string"},
+                                        "b": {"type": "string"},
+                                        "c": {"type": "string"},
+                                        "d": {"type": "string"}
+                                    }
+                                },
+                                "correct": {"type": "string", "enum": ["a", "b", "c", "d"]},
+                                "explanation": {"type": "string"}
+                            },
+                            "required": ["id", "question", "options", "correct", "explanation"]
+                        }
+                    }
+                },
+                "required": ["questions"]
+            },
         ),
     )
 

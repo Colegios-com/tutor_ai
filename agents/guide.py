@@ -46,6 +46,33 @@ def initialize_guide_workflow(user_message: Message) -> str:
             role = 'user' if context_data['sender'] == 'user' else 'model'
             contents.append(types.Content(parts=parts, role=role))
 
+    # Retrieve previous messages if no context is provided  
+    if not user_message.context:
+        previous_messages = get_data(f'users/{user_message.phone_number}/messages', order_by='timestamp', limit=20)
+        if previous_messages:
+            for _, previous_message_data in previous_messages.items():
+                parts = []
+                previous_message_text = previous_message_data['text']
+                parts.append(types.Part.from_text(text=previous_message_text))
+                if previous_message_data['message_type'] == 'document' and previous_message_data['media_url']:
+                    previous_message_content = f'The accompanying document is attached to the last message you sent me.'
+                    parts.append(types.Part.from_text(text=previous_message_content))
+                    file = download_file(previous_message_data['media_url'])
+                    parts.append(types.Part.from_bytes(data=file, mime_type=previous_message_data['media_mime_type']))
+                elif previous_message_data['message_type'] == 'image' and previous_message_data['media_url']:
+                    previous_message_content = f'The accompanying image is attached to the last message you sent me.'
+                    parts.append(types.Part.from_text(text=previous_message_content))
+                    file = download_file(previous_message_data['media_url'])
+                    parts.append(types.Part.from_bytes(data=file, mime_type=previous_message_data['media_mime_type']))
+                elif previous_message_data['message_type'] == 'video' and previous_message_data['media_url']:
+                    previous_message_content = f'The accompanying video is attached to the last message you sent me.'
+                    parts.append(types.Part.from_text(text=previous_message_content))
+                    file = download_file(previous_message_data['media_url'])
+                    parts.append(types.Part.from_bytes(data=file, mime_type=previous_message_data['media_mime_type']))
+                
+                role = 'user' if previous_message_data['sender'] == 'user' else 'model'
+                contents.append(types.Content(parts=parts, role=role))
+
     # Retrieve relevant memories if no context is provided
     if not user_message.context:
         memories = query_vectors(data=user_message.text, user=user_message.phone_number)
@@ -75,35 +102,113 @@ def initialize_guide_workflow(user_message: Message) -> str:
     contents.append(types.Content(parts=parts, role='user'))
 
     system_prompt = f'''
-        You are a study guide generator specialized in creating structured learning paths. You will generate a comprehensive study guide based on the provided topic, organizing content from fundamental concepts to advanced mastery. Your response must be strictly in the specified JSON format with no additional text.
+        You are a study guide generator specialized in creating structured learning paths designed to complement the **Aldous** tutoring agent. You will generate a comprehensive study guide based on the provided topic, organizing content according to evidence-based pedagogy (chunking, scaffolding, active recall, metacognition) to support Aldous's interactive learning sequence. Your response must be strictly in the specified JSON format with no additional text.
 
         # REQUIREMENTS
-        - The study guide must be in the same language as the user's message and provided context
-        - Generate a recursive tree structure where each node can branch into multiple sub-topics
-        - Each node must specify its type
-        - Include clear, measurable milestones for each learning component
-        - Ensure logical progression of concepts
-        - Include prerequisites and key questions for each node
-        - Each branch should represent a distinct learning path or sub-topic
-        - Leaf nodes should contain specific, actionable learning points
 
-        # STRUCTURE
-        {{"title": "[main topic or subject area]", "type": "[type of subject area]", "description": "[comprehensive overview of this learning node]", "milestone": {{"description": "[what success looks like for this node]", "criteria": [list of specific measurable outcomes], "measurement": "[how to assess achievement of criteria]"}}, "prerequisites": [list of required knowledge and/or skills], "key_questions": [list of key questions the student can ask you to strengthen their learning], "branches": [{{"title": "[sub-topic or component]", "type": "[type of sub-topic or component]", "description": "[detailed explanation of this branch]", "milestone": {{"description": "[specific success criteria for this branch]", "criteria": [list of branch specific outcomes], "measurement": "[branch-specific assessment method]"}}, "prerequisites": [list of branch specific requirements], "key_questions": [list of branch specific key questions the user can ask you to strengthen their learning], "branches": [{{"title": "[further subtopic]", "type": "[type of subtopic]", "description": "[specific concept details]", "milestone": {{"description": "[detailed success criteria]", "criteria": [list of detailed outcomes], "measurement": "[specific assessment method]"}}, "prerequisites": [list of specific requirements], "key_questions": [list of specific questions the user can ask you to strengthen their learning], "branches": []}}]}}]}}
+        **Companion Tool:** Generate a guide that serves as a structural foundation for an Aldous tutoring session. It should provide the "map" and key content points Aldous will use interactively.
+        **Language:** The study guide must be in the same language as the user's message and provided topic.
+        **Fixed Structure:** Generate a study guide with **exactly three levels**:
+        - **Level 0:** One main `Module` node.
+        - **Level 1:** Exactly **3** `Topic` nodes branching from the Module.
+        - **Level 2:** Exactly **3** `Concept` nodes branching from *each* Topic node. Level 2 nodes are leaf nodes and **must not** contain a `branches` key.
+        
+        **Node Types:** Use `type` values: "Module", "Topic", "Concept".
+        
+        **Aldous Alignment - Content & Pedagogy:**
+        - **Chunking:** The 1 -> 3 -> 3 structure implements chunking. Ensure `description` fields are concise and focused for each chunk.
+        - **Logical Progression & Scaffolding:** Content within `description` and the sequence of Topics/Concepts must flow logically (simple to complex). `prerequisites` must clearly link dependent nodes (use `title` for referencing).
+        - **Objective Clarity:** `milestone` objects at each level must define clear, measurable outcomes (`criteria`) aligned with Bloom's Taxonomy (moving from recall/understanding at Concept level towards application/analysis at Topic/Module level). The `description` should state the objective simply.
+        - **Activation & Context:** Each `Topic` and `Concept` `description` should briefly include context, a real-world link, or an analogy to activate prior knowledge and establish relevance (supporting Aldous's Phase 5).
+        - **Socratic & Active Recall Prompts:** `key_questions` must contain primarily Socratic questions that prompt recall, explanation, application, and self-assessment, rather than simple factual checks (supporting Aldous's Phases 6, 7, 8).
+        - **Metacognitive Prompts:** Integrate metacognitive questions within `key_questions` (e.g., "How does this connect to [previous concept]?", "What makes this concept challenging?", "How confident are you in applying this? (1-5)", "How would you explain this differently?"). This supports Aldous's Phase 9.
+        **Session Planning:** While not a strict JSON field, ensure the *scope* of the content across the 1 Module -> 5 Topics -> 15 Concepts is realistically coverable within 1-3 one-hour Aldous sessions. Topic nodes represent good natural break points.
 
         # NOTES
-        - Each branch should represent a logical subdivision of the parent topic
-        - Milestones should become more specific as you move deeper into the tree
-        - Key question lists should be relevant to the specific node's content
-        - Prerequisites should clearly indicate what's needed before starting that node
+
+        **Aldous's Role:** Remember, Aldous *uses* this guide. The guide provides the structure, explanations, key questions, and milestones; Aldous handles the dynamic interaction, feedback, adaptation, and timing.
+        **Descriptions:** Should be clear, concise explanations suitable for Aldous to present or for a student to review (supporting Aldous's Phase 6). Include analogies or brief context where helpful.
+        **Key Questions:** Focus on depth. Ask "why," "how," "what if," "compare," "contrast," and self-reflection questions. These are prompts *for* Aldous to ask or for the student to consider.
+        **Milestones:** Make `criteria` specific and observable. `measurement` should suggest how Aldous might assess this (e.g., "Verbal explanation", "Problem-solving attempt", "Application to new scenario").
+        **Prerequisites:** Essential for Aldous's dependency checking (Phase 3). Be specific, referencing the `title` of prerequisite nodes within the guide.
+        **Tone:** Descriptions should adopt a mildly encouraging and clear tone, consistent with Aldous's persona, normalizing potential difficulties.
+
+        # STRUCTURE (Fixed 3 Levels: 1 Module -> 3 Topics -> 3 Concepts each)
     '''
 
     response = google_client.models.generate_content(
         model='gemini-2.0-flash',
-        # model='learnlm-1.5-pro-experimental',
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
             temperature=0.3,
+            response_mime_type='application/json',
+            response_schema = {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "type": {"type": "string"},
+                    "description": {"type": "string"},
+                    "milestone": {
+                        "type": "object",
+                        "properties": {
+                            "description": {"type": "string"},
+                            "criteria": {"type": "array", "items": {"type": "string"}},
+                            "measurement": {"type": "string"}
+                        },
+                        "required": ["description", "criteria", "measurement"]
+                    },
+                    "prerequisites": {"type": "array", "items": {"type": "string"}},
+                    "key_questions": {"type": "array", "items": {"type": "string"}},
+                    "branches": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "type": {"type": "string"},
+                                "description": {"type": "string"},
+                                "milestone": {
+                                    "type": "object",
+                                    "properties": {
+                                        "description": {"type": "string"},
+                                        "criteria": {"type": "array", "items": {"type": "string"}},
+                                        "measurement": {"type": "string"}
+                                    },
+                                    "required": ["description", "criteria", "measurement"]
+                                },
+                                "prerequisites": {"type": "array", "items": {"type": "string"}},
+                                "key_questions": {"type": "array", "items": {"type": "string"}},
+                                "branches": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "title": {"type": "string"},
+                                            "type": {"type": "string"},
+                                            "description": {"type": "string"},
+                                            "milestone": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "description": {"type": "string"},
+                                                    "criteria": {"type": "array", "items": {"type": "string"}},
+                                                    "measurement": {"type": "string"}
+                                                },
+                                                "required": ["description", "criteria", "measurement"]
+                                            },
+                                            "prerequisites": {"type": "array", "items": {"type": "string"}},
+                                            "key_questions": {"type": "array", "items": {"type": "string"}}
+                                        },
+                                        "required": ["title", "type", "description", "milestone", "prerequisites", "key_questions"]
+                                    }
+                                }
+                            },
+                            "required": ["title", "type", "description", "milestone", "prerequisites", "key_questions", "branches"]
+                        }
+                    }
+                },
+                "required": ["title", "type", "description", "milestone", "prerequisites", "key_questions", "branches"]
+            }
         ),
     )
 

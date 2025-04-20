@@ -5,11 +5,9 @@ from data.models import Message
 from typing import Optional
 from utilities.document_parser import parse_document
 from storage.storage import get_data, upload_file
-import uuid
 
 # Standard
 import time
-from datetime import datetime, timedelta
 
 
 def verify_message_payload(payload: dict) -> bool:
@@ -145,6 +143,25 @@ def build_agent_message(user_message: Message, raw_response: str, message_type: 
 def build_reminder_message(user_data: dict) -> Message:
     """
     Build a Message object from user's last interaction data for reminder purposes
+    """
+    last_interaction = user_data.get('last_interaction', {})
+    if not last_interaction:
+        return None
+
+    user_message = last_interaction.get('user_message', {})
+    if not user_message:
+        return None
+
+    # Convert dict to Message object if it isn't already
+    if isinstance(user_message, dict):
+        user_message = Message(**user_message)
+    
+    return user_message
+
+
+def build_onboarding_message(user_data: dict) -> Message:
+    """
+    Build a Message object from user's last interaction data for onboarding purposes
     """
     last_interaction = user_data.get('last_interaction', {})
     if not last_interaction:

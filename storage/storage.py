@@ -1,9 +1,4 @@
 from firebase_admin import db, storage
-from init.google_ai import google_client
-from google.genai import types
-
-
-from io import BytesIO
 
 
 def save_data(url, payload):

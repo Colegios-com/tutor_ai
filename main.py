@@ -12,6 +12,7 @@ from utilities.authentication import verify
 from utilities.cryptography import decrypt_request, encrypt_response
 from utilities.message_parser import verify_message_payload, is_duplicate_message, build_user_message
 from utilities.response_orchestrator import orchestrate_response
+from utilities.onboarding_manager import process_onboarding_messages
 from utilities.reminder_manager import process_reminders
 
 # Storage
@@ -19,6 +20,9 @@ from storage.storage import save_data, get_data
 
 # Agents
 from agents.memory import initialize_memory_workflow
+
+# Tests
+from custom_tests.test_tutor_workflow import orchestrate_tutor_workflow
 
 # Async
 from fastapi import Request, Response, Query, BackgroundTasks, HTTPException
@@ -133,17 +137,25 @@ def update_content(request: Request, payload: dict, content_type: str, content_i
         return 'Content updated successfully.'
     except:
         return 'Unauthorized request.'
-    
+
+
+@app.get('/send_onboarding_messages/')
+def send_onboarding_messages(background_tasks: BackgroundTasks):
+    try:    
+        background_tasks.add_task(process_onboarding_messages)
+        return f'Onboarding messages processed successfully.'
+    except Exception as e:
+        print(f'Error sending onboarding messages: {e}')
+        return 'Error sending onboarding messages.'
+     
 
 @app.get('/send_reminders/')
-def send_reminders():
+def send_reminders(background_tasks: BackgroundTasks):
     try:    
-        start = time.time()
-        process_reminders()
-        end = time.time()
-        print(f'Time elapsed: {end - start}')
+        background_tasks.add_task(process_reminders)
         return f'Reminders processed successfully.'
-    except:
+    except Exception as e:
+        print(f'Error sending reminders: {e}')
         return 'Error sending reminders.'
 
 
@@ -169,6 +181,12 @@ def send_reminders():
 # def whatsapp_webhooks():
 #     response = whatsapp_client.delete_webhook()
 #     return response
+
+
+# @app.get('/test_tutor_workflow/')
+# def test_tutor_workflow():
+#     analysis = orchestrate_tutor_workflow()
+#     return analysis
 
 
 @app.post('/flow_test/')

@@ -11,7 +11,7 @@ from agents.evaluation import initialize_evaluation_workflow
 from agents.guide import initialize_guide_workflow
 from agents.tutor import initialize_tutor_workflow
 from agents.reminder import initialize_reminder_workflow
-
+from agents.onboarding import initialize_onboarding_workflow
 # Data
 from data.models import Message
 
@@ -103,4 +103,23 @@ def orchestrate_reminder(user_message: Message) -> tuple[Message, dict]:
         return response_message, response
     except Exception as e:
         print(f'Error orchestrating reminder: {e}')
+        return None, None
+    
+
+def orchestrate_onboarding_message(user_message: Message, default_onboarding_message: str) -> tuple[Message, dict]:
+    """
+    Orchestrate the onboarding message response for a user
+    Returns a tuple of (response_message, whatsapp_response)
+    """
+    try:
+        onboarding_text = initialize_onboarding_workflow(user_message=user_message, default_onboarding_message=default_onboarding_message)
+        if not onboarding_text:
+            return None, None
+
+        response_message = build_agent_message(user_message=user_message, raw_response=onboarding_text)
+        response = whatsapp_client.send_message(response_message=response_message)
+
+        return response_message, response
+    except Exception as e:
+        print(f'Error orchestrating onboarding message: {e}')
         return None, None

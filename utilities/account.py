@@ -4,6 +4,7 @@ from init.whatsapp import whatsapp_client
 # Utilities
 from utilities.message_parser import build_agent_message
 from utilities.authentication import sign
+from utilities.usage import update_messages, update_last_interaction
 # Storage
 from storage.storage import save_data, update_data, get_data
 
@@ -40,7 +41,6 @@ def send_email(email: str, phone_number: str):
 
 
 def create_subscription(payload: dict):
-    print(payload)
     # Payment Intent Success
     customer_id = payload['customer']['id']
     customer_email = payload['customer']['email']
@@ -81,9 +81,41 @@ def create_subscription(payload: dict):
     return phone_number
 
 
-def create_free_trial(user_message: Message):
-    # Add subscription
+def handle_referral(referrer_phone: str, referral_phone: str):
+    # Check if free trial exists
+    subscription_url = f'users/{referrer_phone}/subscriptions/free_trial'
+    existing_subscription = get_data(subscription_url)
+    
+    # Add or update subscription
+    if existing_subscription:
+        # Check if subscription is expired
+        current_expiry = datetime.strptime(existing_subscription['expiry_date'], '%Y-%m-%d %H:%M:%S.%f')
+        if datetime.now() > current_expiry:
+            # Subscription expired, add 7 days from now
+            expiry_date = str(datetime.now() + timedelta(days=7))
+        else:
+            # Subscription still active, add 7 days to current expiry date
+            expiry_date = str(current_expiry + timedelta(days=7))
+        
+        subscription_data = {'expiry_date': expiry_date}
+        update_data(subscription_url, subscription_data)
 
+        referral_url = f'users/{referrer_phone}/referrals/{referral_phone}'
+        referral_data = {'timestamp': str(datetime.now())}
+        save_data(referral_url, referral_data)
+        return True
+    else:
+        return False
+    
+
+def create_free_trial(user_message: Message):
+    # Default trial configuration
+    default_config = {
+        'trial_days': 7,
+        'subscription_type': 'pro',
+        'onboarding': 'General Help',
+    }
+    # Define special codes with their configurations
     SPECIAL_CODES = {
         'H9': {
             'trial_days': 7,
@@ -107,89 +139,78 @@ def create_free_trial(user_message: Message):
         },
     }
     
-    trial_days = 7  # Default trial period
-    subscription_type = 'pro'  # Default subscription type
-    onboarding = 'General Help'
-    
-    # Try to extract code between delimiters
+    # Get trial configuration based on special code
+    config = default_config.copy()
     special_code_match = re.search(r"\*(.*?)\*", user_message.text)
     
     if special_code_match:
         special_code = special_code_match.group(1)
         
-        # Handle subscription codes
         if special_code in SPECIAL_CODES:
-            trial_days = SPECIAL_CODES[special_code]['trial_days']
-            subscription_type = SPECIAL_CODES[special_code]['subscription_type']
-            onboarding = SPECIAL_CODES[special_code]['onboarding']
+            # Use predefined special code configuration
+            config.update(SPECIAL_CODES[special_code])
         else:
             # Check if it's a referral code (assume it's a phone number)
-            if handle_referral(special_code):
-                onboarding = f'Referral Code: {special_code}'
-                trial_days = 14
+            if handle_referral(special_code, user_message.phone_number):
+                config.update({
+                    'trial_days': 14,
+                    'onboarding': f'Referral Code: {special_code}',
+                })
     
-    expiry_date = str(datetime.now() + timedelta(days=trial_days))
+    # Create subscription
+    timestamp = datetime.now()
+    expiry_date = str(timestamp + timedelta(days=config['trial_days']))
+    
     subscription_data = {
-        'subscription_type': subscription_type,
+        'subscription_type': config['subscription_type'],
         'usage': 0,
         'tokens': 0,
         'input_tokens': 0,
         'output_tokens': 0,
+        'start_date': str(timestamp),
         'expiry_date': expiry_date,
-        'onboarding': onboarding,
+        'onboarding': config['onboarding'],
     }
+
+    # Save subscription data
     url = f'users/{user_message.phone_number}/subscriptions/free_trial'
     save_data(url, subscription_data)
+    update_messages([user_message])
 
-    with open(f'images/welcomeBanner.png', 'rb') as file:
-        file_content = file.read()
-        media_id = whatsapp_client.upload_media(message=user_message, file_content=file_content, file_name='image.png', file_type='image/png')
-        
-        # Welcome messages sequence
-        welcome_messages = [
-            {
-                'message': f'*¡Hola! 👋 Soy Aldous, tu tutor académico. ✅*\n\nTu prueba de *{trial_days} días* está activa. ¡Estoy aquí para ayudarte! Disfruta de:\n\n• *Mejora tus calificaciones* 📈\n• *Entiende mejor tus materias* 🧠\n• *Soporte personalizado* 👨‍🏫',
-                'type': 'image',
-            },
-            {
-                'message': '*¿En qué te ayudo hoy con tus estudios? 💪*\n\n• ¿Concepto confuso? 🤯 _¡Explícamelo!_\n• ¿Tarea difícil? 📸 _¡Manda foto!_\n• ¿Practicando idiomas? 🗣️ _¡Graba tu voz!_',
-                'type': 'text'
-            },
-        ]
-        
-        for message in welcome_messages:
-            if message['type'] == 'image':
-                response_message = build_agent_message(user_message=user_message, raw_response=message['message'], message_type='image', media_id=media_id)
-                whatsapp_client.send_media(message=response_message, media_id=response_message.media_id, file_name='image.png', file_type='image', caption=message['message'])
-            else:
-                response_message = build_agent_message(user_message=user_message, raw_response=message['message'])
-                whatsapp_client.send_message(response_message=response_message)
-            time.sleep(2)
-
-        whatsapp_client.send_reaction(user_message=user_message, reaction='🎉')
-
-
-def handle_referral(referrer_phone: str):
-    # Check if free trial exists
-    url = f'users/{referrer_phone}/subscriptions/free_trial'
-    existing_subscription = get_data(url)
+    # Send welcome messages
+    welcome_messages = [
+        {
+            'message': f'*¡Hola! 👋 Soy Aldous, tu tutor académico personal*\n\nTu prueba de {config["trial_days"]} días está activa. Estoy aquí para:\n\n• *Resolver dudas académicas* 🧠\n• *Explicar conceptos difíciles* 📚\n• *Ayudarte con tareas* ✏️',
+            'type': 'image'
+        },
+        {
+            'message': '*Para obtener mejores resultados:*\n\n1️⃣ Sé específico en tus preguntas\n2️⃣ Incluye contexto relevante\n3️⃣ Explica lo que ya entiendes\n\n*¿En qué puedo ayudarte hoy? Prueba:*\n\n`Escribir tu primera consulta detallada ✏️`\n`Enviar una foto de tu tarea 📸`\n`Grabar un mensaje 🎤`',
+            'type': 'text'
+        },
+    ]
     
-    # Add or update subscription
-    if existing_subscription:
-        # Check if subscription is expired
-        current_expiry = datetime.strptime(existing_subscription['expiry_date'], '%Y-%m-%d %H:%M:%S.%f')
-        if datetime.now() > current_expiry:
-            # Subscription expired, add 7 days from now
-            expiry_date = str(datetime.now() + timedelta(days=7))
+    # Send each welcome message
+    for message in welcome_messages:
+        if message['type'] == 'image':
+            with open(f'images/aldous.png', 'rb') as file:
+                file_content = file.read()
+                media_id = whatsapp_client.upload_media(message=user_message, file_content=file_content, file_name='image.png', file_type='image/png')        
+            
+            response_message = build_agent_message(user_message=user_message, raw_response=message['message'], message_type='text', media_id=media_id)
+            response =whatsapp_client.send_media(message=response_message, media_id=response_message.media_id, file_name='image.png', file_type='image', caption=message['message'])
         else:
-            # Subscription still active, add 7 days to current expiry date
-            expiry_date = str(current_expiry + timedelta(days=7))
+            response_message = build_agent_message(user_message=user_message, raw_response=message['message'])
+            response = whatsapp_client.send_message(response_message=response_message)
         
-        subscription_data = {'expiry_date': expiry_date}
-        update_data(url, subscription_data)
-        return True
-    else:
-        return False
+        time.sleep(2)
+        response_message.id = response['messages'][0]['id'].replace('wamid.', '')
+        update_messages([response_message])
+
+    update_last_interaction(user_message, response_message)
+    
+
+    # Send celebration reaction
+    whatsapp_client.send_reaction(user_message=user_message, reaction='🎉')
 
 
 def verify_user(user_message: Message):
@@ -222,15 +243,16 @@ def verify_subscription(user_message: Message):
 
     if now > expiry_date:
         messages = [
-            "Tu suscripción ha expirado. ¡Invita a tus amigos y obtén una semana adicional de uso gratis por cada uno que se suscriba! Simplemente comparte el siguiente enlace con ellos 👇",
+            "*Tu suscripción ha expirado*.\n\n¡Invita a tus amigos y obtén una semana adicional de uso gratis por cada uno que se suscriba! Simplemente comparte el siguiente enlace con ellos.",
             f"¡Hola! 👋 Quiero invitarte a probar Aldous, ¡el tutor super inteligente que está revolucionando el aprendizaje! 🚀 Aldous te ayudará a entender CUALQUIER tema y a subir tus calificaciones. ¡Es como tener un genio a tu disposición! 🧠\n\n¡Pruébalo GRATIS! Al presionar el enlace de abajo y enviar el mensaje, ¡recibirás una semana ADICIONAL en tu prueba! 🎁 ¡No te lo pierdas! 👇\n\nhttps://api.whatsapp.com/send?phone=14243826945&text=Hola%20Aldous!%20Quiero%20activar%20mi%20prueba%20de%2014%20d%C3%ADas.%20Mi%20c%C3%B3digo%20es:%20%2A{user_message.phone_number}%2A"
         ]
         
         for message in messages:
             response_message = build_agent_message(user_message=user_message, raw_response=message)
             whatsapp_client.send_message(response_message=response_message)
-            whatsapp_client.send_reaction(user_message=user_message, reaction='🎁')
             time.sleep(2)
+        
+        whatsapp_client.send_reaction(user_message=user_message, reaction='🎁')
         return False
 
     # If subscription is free_trial, check if user has a profile
@@ -244,18 +266,3 @@ def verify_subscription(user_message: Message):
             return False
         
     return subscription_data['subscription_type']        
-
-
-def update_usage(user_message: Message):
-    # Gather data
-    url = f'users/{user_message.phone_number}/subscriptions'
-    subscription = get_data(url, order_by='expiry_date', limit=1)
-
-    if subscription:
-        subscription_id, subscription_data = subscription.popitem()
-        subscription_data['usage'] += user_message.tokens
-        subscription_data['tokens'] += user_message.tokens
-        subscription_data['input_tokens'] += user_message.input_tokens
-        subscription_data['output_tokens'] += user_message.output_tokens
-
-        save_data(f'{url}/{subscription_id}', subscription_data)

@@ -92,7 +92,6 @@ def initialize_analysis_workflow(user_message: Message) -> str:
 
     response = google_client.models.generate_content(
         model='gemini-2.0-flash',
-        # model='learnlm-1.5-pro-experimental',
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
