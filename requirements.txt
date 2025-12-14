@@ -1,15 +1,9 @@
 chromadb
-cohere
-cryptography
 fastapi
-firebase_admin
-fireworks-ai
+supabase
 google-genai
 gunicorn
-json_repair
-openai
 PyJWT
 pypdf
 python-docx
 requests
-sendgrid

@@ -1,5 +1,5 @@
 from init.chroma import chroma_client
-from init.cohere import cohere_client
+from embedding import embed_content
 
 import uuid
 import time
@@ -77,9 +77,9 @@ def query_vectors(data: str, user: str, context_type: str = None, timestamp: flo
     # If only user condition exists, don't use $and
     metadata = {'$and': conditions} if len(conditions) > 1 else conditions[0]
 
-    raw_embeddings = cohere_client.embed(texts=[data], model='embed-multilingual-v3.0', input_type='search_document')
+    raw_embeddings = embed_content(data)
     results = collection.query(
-        query_embeddings=raw_embeddings.embeddings,
+        query_embeddings=raw_embeddings,
         where=metadata,
         n_results=3,
     )

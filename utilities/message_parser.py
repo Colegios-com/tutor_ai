@@ -1,13 +1,19 @@
 # Init
 from init.whatsapp import whatsapp_client
+from init.google_ai import google_client
+
+from google.genai.types import UploadFileConfig
 
 from data.models import Message
 from typing import Optional
-from utilities.document_parser import parse_document
-from storage.storage import get_data, upload_file
+
+# Storage
+from storage.storage import get_message
 
 # Standard
 import time
+import tempfile
+import os
 
 
 def verify_message_payload(payload: dict) -> bool:
@@ -19,20 +25,15 @@ def verify_message_payload(payload: dict) -> bool:
 
 
 def is_duplicate_message(payload: dict) -> bool:
-    phone_number = payload['entry'][0]['changes'][0]['value']['messages'][0]['from']
-    message_id = payload['entry'][0]['changes'][0]['value']['messages'][0]['id']
-    url = f'users/{phone_number}/messages'
-    messages = get_data(url)
-    if messages:
-        return any(value['id'] == message_id for value in messages.values())
-    return False
+    whatsapp_message_id = payload['entry'][0]['changes'][0]['value']['messages'][0]['id']
+    return get_message(whatsapp_message_id)
 
 
 def extract_base_data(payload: dict) -> dict:
     try:
         message_data = payload['entry'][0]['changes'][0]['value']['messages'][0]
         base_data = {
-            'id': message_data['id'],
+            'whatsapp_message_id': message_data['id'],
             'phone_number_id': payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'],
             'sender': 'user',
             'phone_number': message_data['from'],
@@ -48,42 +49,34 @@ def extract_base_data(payload: dict) -> dict:
         raise ValueError("Invalid payload structure.")
 
 
-def parse_text_message(message: dict) -> tuple[str, str]:
-    body = message['text']['body']
-    if body.startswith(('/perfil', '/analisis', '/guia', '/imagen', '/examen')):
-        message_type, _, text = body.partition(' ')
-    else:
-        message_type = 'text'
-        text = body
-    return message_type, text
-
-
+# Do not worry about now
 def process_media_message(message: dict, message_type: str) -> tuple[str, Optional[str], Optional[str]]:
     try:
         media_id = message[message_type]['id']
-        media_url, media_mime_type = whatsapp_client.get_media_url(id=media_id)
+        media_url, mime_type = whatsapp_client.get_media_url(id=media_id)
+
         file = whatsapp_client.download_media(url=media_url)
 
-        media_type, media_extension = media_mime_type.split('/')
-        media_url = upload_file(file, file_path=f'{message.get('from')}/{media_type}/{media_id}.{media_extension}')
-        text = get_media_message_text(message, file, message_type)
+        # Save file to temporary location
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(file)
+            temp_file_path = temp_file.name
+        try:
+            # 2. Upload the file using the closed file's path
+            uploaded_file = google_client.files.upload(
+                file=temp_file_path, 
+                config=UploadFileConfig(mime_type=mime_type)
+            )
+            return uploaded_file
 
-        return text, media_id, media_url, media_mime_type
+        finally:
+            # 3. Clean up the temporary file manually
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+
     except Exception as e:
         print(f"Error processing media message: {e}")
         raise ValueError("Error processing media message.")
-
-
-def get_media_message_text(message:dict, file: bytes, message_type:str) -> str:
-    if message_type == 'audio':
-        text = whatsapp_client.transcribe_audio(file=file)
-    elif message_type == 'document':
-        file_type = message['document']['mime_type']
-        text = parse_document(data=file, file_type=file_type)
-    else:
-        text = message[message_type].get('caption', f'User sent {message_type}. Build your response based on the {message_type} and the conversation history. Respond in the same language the user has been using in the conversation.')
-
-    return text
 
 
 def build_user_message(payload: dict) -> Message:
@@ -93,21 +86,17 @@ def build_user_message(payload: dict) -> Message:
         message_type = message.get('type')
 
         if message_type == 'text':
-            message_type, text = parse_text_message(message)
             return Message(
                 **base_data,
-                message_type=message_type,
-                text=text,
+                message_type='text',
+                text=message['text']['body'],
             )
         elif message_type in ('image', 'video', 'sticker', 'audio', 'document'):
-            text, media_id, media_url, media_mime_type = process_media_message(message, message_type)
+            file = process_media_message(message, message_type)
             return Message(
                 **base_data,
                 message_type=message_type,
-                text=text,
-                media_id=media_id,
-                media_url=media_url,
-                media_mime_type=media_mime_type,
+                file=file,
             )
         else:
             raise ValueError('Unprocessable message type.')
@@ -129,50 +118,12 @@ def build_user_message(payload: dict) -> Message:
 def build_agent_message(user_message: Message, raw_response: str, message_type: str = 'text', media_id: str = None) -> Message:
     """Builds a response Message object based on the user message."""
     return Message(
-        id=f'{user_message.id}-r',
+        whatsapp_message_id=f'{user_message.whatsapp_message_id}',
         phone_number_id=user_message.phone_number_id,
-        sender='agent',
+        sender='model',
         phone_number=user_message.phone_number,
         message_type=message_type,
         text=raw_response,
         media_id=media_id,
         timestamp=time.time(),
     )
-
-
-def build_reminder_message(user_data: dict) -> Message:
-    """
-    Build a Message object from user's last interaction data for reminder purposes
-    """
-    last_interaction = user_data.get('last_interaction', {})
-    if not last_interaction:
-        return None
-
-    user_message = last_interaction.get('user_message', {})
-    if not user_message:
-        return None
-
-    # Convert dict to Message object if it isn't already
-    if isinstance(user_message, dict):
-        user_message = Message(**user_message)
-    
-    return user_message
-
-
-def build_onboarding_message(user_data: dict) -> Message:
-    """
-    Build a Message object from user's last interaction data for onboarding purposes
-    """
-    last_interaction = user_data.get('last_interaction', {})
-    if not last_interaction:
-        return None
-
-    user_message = last_interaction.get('user_message', {})
-    if not user_message:
-        return None
-
-    # Convert dict to Message object if it isn't already
-    if isinstance(user_message, dict):
-        user_message = Message(**user_message)
-    
-    return user_message

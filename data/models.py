@@ -2,19 +2,14 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-
 class Message(BaseModel):
-    id: str
+    id: Optional[str] = None
+    whatsapp_message_id: str
     phone_number_id: str
     sender: str
     phone_number: str
     message_type: str
-    text: str
-    context: Optional[str] = None
-    media_id: Optional[str] = None
-    media_url: Optional[str] = None
-    media_mime_type: Optional[str] = None
-    tokens: int = 0
-    input_tokens: int = 0
-    output_tokens: int = 0
+    text: Optional[str] = None # Message Text
+    context: Optional[str] = None # Reply Message ID
+    file: Optional[object] = None # Media File Metadata
     timestamp: float

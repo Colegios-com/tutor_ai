@@ -1,10 +1,7 @@
 
-from init.openai import openai_client
-
 from io import BytesIO
 
 import requests
-import base64
 import json
 import random
 
@@ -12,14 +9,26 @@ import random
 class WhatsappClient:
     def __init__(self, key):
         self.key = key
+
+    
+    def get_settings(self):
+        # CALL: Need to generate System User token with higher permissions to get the settings
+        url = f'https://graph.facebook.com/v22.0/389338054272783/settings' # Phone Number ID
         
+        headers = {
+            'Authorization': f'Bearer {self.key}',
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers)
+        return response.json()
 
     def add_public_key(self):
 
-        url = f'https://graph.facebook.com/v22.0/486935574495266/whatsapp_business_encryption'
+        url = f'https://graph.facebook.com/v22.0/389338054272783/whatsapp_business_encryption' # Phone Number ID
         
         headers = {
-            'Authorization': f'Bearer EAAH8K5nwnZCwBOx226GON8zzS5RbVxXEfLHZAfGyY96OXmjk7TI4JRy3xNC2uNcZCZB6IgBkMnJrKwbQwKq8aEN3BC3d3wVXdCjr5HIevDU7gdYa7wCIBHVx1C3xQyWhbarm55niyRWJrsP0QZAeQdZASZBvRgtnRQLsJMXacojsvoYIG9ZC9Ka7yoJ1Ncg2Fty57QZDZD',
+            'Authorization': f'Bearer {self.key}',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
@@ -37,10 +46,10 @@ class WhatsappClient:
 
 
     def list_webhooks(self):        
-        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps'
+        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps' # Business Account ID
         
         headers = {
-            'Authorization': f'Bearer EAAPxOaWf7FUBOwI8ArF7ME4cvRBl13zSYz68PQSLanZBCP27NKZAbsRT3V0fuzmOh6Pq1sjajKLM83UvIs2e46VtKkEL4LKruzFoOSrkFD0JZC5B7utabMLsxUZBmHVdtc4F8Rr5ZCGFdZC8JZCPfSIdkqMgNrXoweYkCl3XrF7ZB5IldqohCp84jdI0KPxLNRqM2uI7DJkKtZAdUEbOnyYTvrjljHQZDZD',
+            'Authorization': f'Bearer {self.key}',
             'Content-Type': 'application/json'
         }
 
@@ -54,10 +63,10 @@ class WhatsappClient:
     
     def delete_webhook(self):
 
-        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps'
+        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps' # Business Account ID
         
         headers = {
-            'Authorization': f'Bearer EAAPxOaWf7FUBOwI8ArF7ME4cvRBl13zSYz68PQSLanZBCP27NKZAbsRT3V0fuzmOh6Pq1sjajKLM83UvIs2e46VtKkEL4LKruzFoOSrkFD0JZC5B7utabMLsxUZBmHVdtc4F8Rr5ZCGFdZC8JZCPfSIdkqMgNrXoweYkCl3XrF7ZB5IldqohCp84jdI0KPxLNRqM2uI7DJkKtZAdUEbOnyYTvrjljHQZDZD',
+            'Authorization': f'Bearer {self.key}',
             'Content-Type': 'application/json'
         }
 
@@ -71,10 +80,10 @@ class WhatsappClient:
 
     def add_webhook(self):
 
-        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps'
+        url = f'https://graph.facebook.com/v22.0/447464381784934/subscribed_apps' # Business Account ID
         
         headers = {
-            'Authorization': f'Bearer EAAPxOaWf7FUBOwI8ArF7ME4cvRBl13zSYz68PQSLanZBCP27NKZAbsRT3V0fuzmOh6Pq1sjajKLM83UvIs2e46VtKkEL4LKruzFoOSrkFD0JZC5B7utabMLsxUZBmHVdtc4F8Rr5ZCGFdZC8JZCPfSIdkqMgNrXoweYkCl3XrF7ZB5IldqohCp84jdI0KPxLNRqM2uI7DJkKtZAdUEbOnyYTvrjljHQZDZD',
+            'Authorization': f'Bearer {self.key}',
             'Content-Type': 'application/json'
         }
 
@@ -84,6 +93,34 @@ class WhatsappClient:
             return response.json()
         except requests.exceptions.RequestException as e:
             return f'Error making request: {e}'
+
+    
+    def send_typing_indicator(self, user_message):
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.key}',
+                'Content-Type': 'application/json'
+            }
+            payload = {
+                "messaging_product": "whatsapp",
+                "status": "read",
+                "message_id": user_message.whatsapp_message_id,
+                "typing_indicator": {
+                    "type": "text"
+                }
+                
+            }
+            response = requests.post(
+                f'https://graph.facebook.com/v22.0/{user_message.phone_number_id}/messages', 
+                headers=headers, 
+                data=json.dumps(payload)
+            )
+            if response.status_code == 200:
+                return True
+            else:
+                raise Exception
+        except Exception as e:
+            return {'status': False, 'message': f'Oops, there was an error sending the typing indicator: {e}'}
     
 
     def send_reaction(self, user_message, reaction=None):
@@ -101,7 +138,7 @@ class WhatsappClient:
                 'to': user_message.phone_number,
                 'type': 'reaction',
                 'reaction': {
-                    'message_id': user_message.id,
+                    'message_id': user_message.whatsapp_message_id,
                     'emoji': reaction
                 }
             }
@@ -141,7 +178,7 @@ class WhatsappClient:
             if components:
                 payload['template']['components'] = components
             response = requests.post(
-                f'https://graph.facebook.com/v22.0/486935574495266/messages', 
+                f'https://graph.facebook.com/v22.0/389338054272783/messages', # Phone Number ID
                 headers=headers, 
                 data=json.dumps(payload)
             )
@@ -212,20 +249,6 @@ class WhatsappClient:
         if response.status_code == 200:
             return response.content
         else:
-            return None
-        
-
-    def convert_to_base64(self, file):
-        try:
-            return base64.b64encode(file).decode('utf-8')
-        except Exception:
-            return None
-
-
-    def transcribe_audio(self, file):
-        try:
-            return openai_client.audio.transcriptions.create(model='whisper-v3', file=file).text
-        except Exception:
             return None
         
 

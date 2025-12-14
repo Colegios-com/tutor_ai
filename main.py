@@ -1,34 +1,17 @@
 # Init
 from init.fast_api import app
 from init.whatsapp import whatsapp_client
-import init.firebase
-
-# Typing
-from typing import Optional
-
-# Utilities
-from utilities.account import create_subscription, verify_user, verify_subscription
-from utilities.authentication import verify
-from utilities.cryptography import decrypt_request, encrypt_response
-from utilities.message_parser import verify_message_payload, is_duplicate_message, build_user_message
-from utilities.response_orchestrator import orchestrate_response
-from utilities.onboarding_manager import process_onboarding_messages
-from utilities.reminder_manager import process_reminders
 
 # Storage
-from storage.storage import save_data, get_data
+from storage.storage import add_messages
 
-# Agents
-from agents.memory import initialize_memory_workflow
-
-# Tests
-from custom_tests.test_tutor_workflow import orchestrate_tutor_workflow
+# Utilities
+from utilities.message_parser import verify_message_payload, is_duplicate_message, build_user_message
+from utilities.response_orchestrator import orchestrate_response
 
 # Async
-from fastapi import Request, Response, Query, BackgroundTasks, HTTPException
-
-# Standard
-import time
+import asyncio
+from fastapi import Request, Query, BackgroundTasks
 
 
 @app.get('/whatsapp/')
@@ -39,9 +22,9 @@ async def whatsapp_webhook(hub_mode: str = Query(..., alias='hub.mode'), hub_cha
         return 'Invalid request.'
 
 
+
 @app.post('/whatsapp/', status_code=200)
 async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
-    start = time.time()
     payload = await request.json()
 
     if not verify_message_payload(payload):
@@ -52,184 +35,44 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     
     user_message = build_user_message(payload)
 
-    if not verify_user(user_message=user_message):
-        return 'User created successfully.'
-    
-    subscription_type = verify_subscription(user_message=user_message)
+    # --- 1. Define the Keep-Alive Function ---
+    async def keep_typing_alive():
+        try:
+            while True:
+                # Send the indicator
+                # Note: If whatsapp_client methods are synchronous, wrap them if needed, 
+                # but standard HTTP requests are fast enough to just call here.
+                whatsapp_client.send_typing_indicator(user_message=user_message)
+                
+                # Wait 20 seconds (WhatsApp indicators expire after ~25s, so 20s is safe)
+                await asyncio.sleep(20)
+        except asyncio.CancelledError:
+            # This allows the task to stop cleanly when we cancel it
+            pass
 
-    if not subscription_type:
-        return 'Subscription expired.'
-    
-    whatsapp_client.send_reaction(user_message=user_message, reaction='💭')
+    # --- 2. Start the Task ---
+    typing_task = asyncio.create_task(keep_typing_alive())
 
-    response_message, response = orchestrate_response(user_message=user_message, subscription_type=subscription_type)
+    try:
+        # --- 3. Run your main logic ---
+        # IMPORTANT: orchestrate_response needs to be compatible with async execution.
+        
+        # OPTION A: If orchestrate_response is already 'async def':
+        # response_message = await orchestrate_response(user_message=user_message)
+        
+        # OPTION B: If orchestrate_response is synchronous (blocking), run it in a thread
+        # This is required so the typing loop doesn't get frozen.
+        response_message = await asyncio.to_thread(orchestrate_response, user_message=user_message)
+
+    finally:
+        # --- 4. Stop the typing loop ---
+        # This block runs whether the response succeeded or failed
+        typing_task.cancel()
+
     if not response_message:
         return 'Error sending response.'
 
-    whatsapp_client.send_reaction(user_message=user_message)
-    
-    response_message.id = response['messages'][0]['id'].replace('wamid.', '')
-    background_tasks.add_task(initialize_memory_workflow, user_message, response_message)
-
-    end = time.time()
-    print(f'Time elapsed: {end - start}')
+    # Save messages (If add_messages is DB heavy, consider awaiting it or offloading it)
+    add_messages(new_messages=[user_message, response_message])
 
     return True
-
-               
-@app.post('/renew_subscription/')
-def renew_subscription(request: Request, payload: dict):
-    headers = request.headers
-    if headers['origin'] == 'Nf8Sa!EGM3%&cKyIcyy%In$@vZ^klOI!':
-        phone_number = create_subscription(payload)
-        components = [
-            {
-                'type': 'header',
-                'parameters': [
-                    {
-                        'type': 'image',
-                        'image': {
-                        'link': 'https://colegios-media.s3.amazonaws.com/thumbnails/welcomeBanner.png'
-                        },
-                    },
-                ],
-            },
-        ]
-        whatsapp_client.send_template(phone_number=phone_number, template_name='subscription_activated', components=components)
-        return 'Subscription renewed successfully.'
-    else:
-        return 'Unauthorized request.'
-
-
-@app.get('/get_content/')
-def get_content(request: Request, content_type: str, content_id: Optional[str] = None):
-    headers = request.headers
-    try:
-        phone_number = verify(headers['Authorization'])
-        if content_type == 'intake' or content_type == 'profile':
-            url = f'users/{phone_number}/profile'
-        elif content_type == 'evaluations':
-            url = f'users/{phone_number}/evaluations/{content_id}'
-        elif content_type == 'guides':
-            url = f'users/{phone_number}/guides/{content_id}'
-        else:
-            raise HTTPException(status_code=404, detail='Content type not found.')
-        data = get_data(url)
-        return data
-    except:
-        return 'Unauthorized request.'
-
-
-@app.post('/update_content/')
-def update_content(request: Request, payload: dict, content_type: str, content_id: Optional[str] = None):
-    headers = request.headers
-    try:
-        phone_number = verify(headers['Authorization'])
-        if content_type == 'intake' or content_type == 'profile':
-            url = f'users/{phone_number}/profile'
-        elif content_type == 'evaluations':
-            url = f'users/{phone_number}/evaluations/{content_id}'
-        elif content_type == 'guides':
-            url = f'users/{phone_number}/guides/{content_id}'
-        else:
-            raise HTTPException(status_code=404, detail='Content type not found.')
-        save_data(url, payload)
-        return 'Content updated successfully.'
-    except:
-        return 'Unauthorized request.'
-
-
-@app.get('/send_onboarding_messages/')
-def send_onboarding_messages(background_tasks: BackgroundTasks):
-    try:    
-        background_tasks.add_task(process_onboarding_messages)
-        return f'Onboarding messages processed successfully.'
-    except Exception as e:
-        print(f'Error sending onboarding messages: {e}')
-        return 'Error sending onboarding messages.'
-     
-
-@app.get('/send_reminders/')
-def send_reminders(background_tasks: BackgroundTasks):
-    try:    
-        background_tasks.add_task(process_reminders)
-        return f'Reminders processed successfully.'
-    except Exception as e:
-        print(f'Error sending reminders: {e}')
-        return 'Error sending reminders.'
-
-
-# @app.post('/public_key/')
-# def whatsapp_public_key():
-#     response = whatsapp_client.add_public_key()
-#     return response
-
-
-# @app.get('/webhooks/')
-# def whatsapp_webhooks():
-#     response = whatsapp_client.list_webhooks()
-#     return response
-
-
-# @app.post('/webhooks/')
-# def whatsapp_webhooks():
-#     response = whatsapp_client.add_webhook()
-#     return response
-
-
-# @app.delete('/webhooks/')
-# def whatsapp_webhooks():
-#     response = whatsapp_client.delete_webhook()
-#     return response
-
-
-# @app.get('/test_tutor_workflow/')
-# def test_tutor_workflow():
-#     analysis = orchestrate_tutor_workflow()
-#     return analysis
-
-
-@app.post('/flow_test/')
-async def flow_test(request: Request, background_tasks: BackgroundTasks):
-    try:
-        payload = await request.json()
-        decrypted_data, aes_key, iv = decrypt_request(payload['encrypted_flow_data'], payload['encrypted_aes_key'], payload['initial_vector'])
-        print(f'Decrypted data: {decrypted_data}')
-        response = {"data": {"status": "active"}}
-
-        encrypted_response = encrypt_response(response, aes_key, iv)
-        return Response(content=encrypted_response, media_type='text/plain')
-    except:
-        return 'Unauthorized request.'
-
-
-# elif user_message.message_type == '/examen' and subscription_type in ['pro', 'unlimited', 'tester']:
-#     components = [
-#         {
-#             'type': 'body',
-#             'parameters': [
-#                 {
-#                     'type': 'text',
-#                     'parameter_name': 'first_name',
-#                     'text': 'Dudu',
-#                 },
-#             ],
-#         },
-#         {
-#             'type': 'button',
-#             'sub_type': 'flow',
-#             'index': '0',
-#             'parameters': [
-#                 {
-#                     'type': 'action',
-#                     'action': {
-                
-#                     }
-#                 }
-#             ]
-#         }
-#     ]
-#     whatsapp_client.send_template(phone_number=user_message.phone_number, template_name='test_flow', components=components)
-#     random_reaction = random.choice(['🖍️', '✏️', '🖊️'])
-#     whatsapp_client.send_reaction(user_message=user_message, reaction=random_reaction)
-#     return True
