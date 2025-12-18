@@ -1,42 +1,50 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from data.models import Message
 from init.supabase import supabase
 
-BOT_ID = "1379630f-0437-41e1-9c03-82816b4768e0"
+
+def create_conversation(user_message: Message) -> str:
+    """Creates a new conversation."""
+    try:
+        response = supabase.table("conversations").insert({"wa_id": user_message.wa_id, "bot_id": user_message.bot_id}).execute()
+        return response.data[0]
+    except Exception as e:
+        return f"Error creating conversation: {str(e)}"
 
 
-def _get_active_conversation_id(phone_number_id: str) -> str:
-    """Simple helper to resolve phone number -> conversation_id."""
-    # 1. Get Client
-    client = supabase.table("clients").select("id").eq("phone", phone_number_id).maybe_single().execute()
-    if not client:
-        client = supabase.table("clients").insert({"phone": phone_number_id}).execute()
-    client_id = client.data['id'] if 'id' in client.data else client.data[0]['id']
-
-    # 2. Get Conversation
-    conv = supabase.table("conversations").select("id").eq("client_id", client_id).eq("bot_id", BOT_ID).eq("status", "active").limit(1).execute()
+def get_active_conversation(user_message: Message) -> dict:
+    """Simple helper to resolve phone number -> conversation_id and bot_id."""
+    # get coversation no more than 10 minutes old
+    now = datetime.now(timezone.utc)
+    ten_minutes_ago = now - timedelta(minutes=10)
+    conv = supabase.table("conversations").select("id, bots(id, restaurant_id)").eq("wa_id", user_message.wa_id).eq("status", "active").gte("updated_at", ten_minutes_ago).limit(1).execute()
     if conv.data:
-        return conv.data[0]['id']
+        return conv.data[0]
     
-    # 3. Create if missing
-    new_conv = supabase.table("conversations").insert({"bot_id": BOT_ID, "client_id": client_id, "status": "active"}).execute()
-    return new_conv.data[0]['id']
+    return {}
 
 
-def add_messages(new_messages: list[Message]) -> None:
+def add_messages(user_messages: list[Message]) -> None:
     """Saves messages to Supabase."""
-    for msg in new_messages:
-        conversation_id = _get_active_conversation_id(msg.phone_number_id)
+    for user_message in user_messages:
+        conversation = get_active_conversation(user_message)
         
         payload = {
-            "whatsapp_message_id": msg.whatsapp_message_id,
-            "conversation_id": conversation_id,
-            "role": msg.sender, # 'user' or 'model'
-            "content": msg.text,
-            "message_type": msg.message_type,
-            "context": msg.context,
-            "file_metadata": msg.file 
+            "phone_number_id": user_message.phone_number_id,
+            "whatsapp_message_id": user_message.whatsapp_message_id,
+            "wa_id": user_message.wa_id,
+            "role": user_message.sender,
+            "content": user_message.text,
+            "message_type": user_message.message_type,
+            "context": user_message.context,
+            "file_metadata": {
+                "uri": user_message.file.uri,
+                "mime_type": user_message.file.mime_type,
+            } if user_message.file else None,
         }
+        if conversation:
+            payload['conversation_id'] = conversation['id']
+
         supabase.table("messages").insert(payload).execute()
 
 
@@ -47,45 +55,43 @@ def get_message(whatsapp_message_id: str) -> Message | bool:
         return False
     return True
 
-def get_conversation(phone_number_id: str) -> list[Message] | bool:
-    """Gets all messages for a phone number."""
-    # 1. Find the conversation ID first
-    # We can't query messages by phone directly because they are linked via conversation_id
-    try:
-        conversation_id = _get_active_conversation_id(phone_number_id)
-    except:
-        return False
 
-    # 2. Fetch messages
-    response = supabase.table("messages")\
-        .select("*")\
-        .eq("conversation_id", conversation_id)\
-        .order("created_at", desc=False)\
-        .execute()
+def build_conversation_history(user_message: Message) -> list[Message] | bool:
+    """Gets all messages for a phone number."""
+    conversation = get_active_conversation(user_message)
+
+    if not conversation:
+        print('No conversation found, send to bot router.')
+        response = supabase.table("messages")\
+            .select("*")\
+            .eq("wa_id", user_message.wa_id)\
+            .order("created_at", desc=False)\
+            .execute()
+    else:
+        print('Conversation found, adding Conversation ID to message.')
+        response = supabase.table("messages")\
+            .select("*")\
+            .eq("conversation_id", conversation['id'])\
+            .order("created_at", desc=False)\
+            .execute()
 
     if not response.data:
-        return False
+        print('No messages in conversation.')
+        return []
 
-    # 3. Map back to Message model
     messages = []
     for row in response.data:
-        # Convert timestamp
-        try:
-            ts = datetime.fromisoformat(row['created_at'].replace('Z', '+00:00')).timestamp()
-        except:
-            ts = 0.0
-
         messages.append(Message(
             id=row['id'],
             whatsapp_message_id=row['whatsapp_message_id'],
-            phone_number_id=phone_number_id,
-            phone_number=phone_number_id,
+            phone_number_id=row['phone_number_id'],
+            wa_id=user_message.wa_id,
             sender=row['role'],
             message_type=row.get('message_type', 'text'),
             text=row['content'],
             context=row.get('context'),
             file=row.get('file_metadata'),
-            timestamp=ts
+            created_at=row['created_at'],
         ))
     
     return messages

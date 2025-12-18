@@ -3,20 +3,22 @@ from google.genai import types
 
 from data.models import Message
 
-from storage.storage import get_conversation
+from storage.storage import get_active_conversation, build_conversation_history
 
 from demos.custormer_service import get_system_prompt, functions
+from demos.router import router_system_prompt, router_functions
 
 
-def build_message_history(user_message: Message) -> list[types.Content]:
-    # Get open conversations tied to the user and bots tied to the business phone number.
-    # If ONE open convo, get that one and bot ID.
-    # If none open, reroute to main bot associated with business phone number.
-    # If multiple open, ask user to select one (leverage carousel menu).
-    messages = []
+def build_contents(user_message: Message) -> list[types.Content]:
+    contents = []
 
-    print(f"Building message history for phone number {user_message.phone_number_id}")
-    message_history = get_conversation(user_message.phone_number_id)
+    parts = []
+    parts.append(types.Part.from_text(text=f'My phone number id is: {user_message.wa_id}. Please use it to identify me during our interaction.'))
+    if user_message.bot_id:
+        parts.append(types.Part.from_text(text=f'Your bot id is: {user_message.bot_id}. Please use it when performing any actions during our interaction.'))
+    
+
+    message_history = build_conversation_history(user_message)
 
     if message_history:
         for message in message_history:
@@ -26,55 +28,65 @@ def build_message_history(user_message: Message) -> list[types.Content]:
             if message.text:
                 parts.append(types.Part.from_text(text=message.text))
 
-            messages.append(
+            contents.append(
                 types.Content(parts=parts, role=message.sender)
             )
 
     parts = []
-    parts.append(types.Part.from_text(text=f'My phone number id is: {user_message.phone_number_id}. Please use it to identify me during our interaction.'))
     if user_message.file:
         parts.append(types.Part.from_uri(file_uri=user_message.file.uri, mime_type=user_message.file.mime_type))
     if user_message.text:
         parts.append(types.Part.from_text(text=user_message.text))
-    messages.append(
+    contents.append(
         types.Content(parts=parts, role=user_message.sender)
     )
     
-    return messages
+    return contents
 
+
+def build_agent(user_message: Message) -> tuple[str, list[types.Tool], list[types.Content]]:
+    active_conversation = get_active_conversation(user_message)
+    if not active_conversation:
+        print('No active conversation found, sending to router.')
+        system_prompt = router_system_prompt
+        contents = build_contents(user_message)
+        tools = router_functions
+        tool_declarations = [f['decalration'] for f in router_functions.values()]
+        return system_prompt, tools, tool_declarations, contents
+
+    print('Active conversation found, sending to customer service bot.')
+    user_message.conversation_id = active_conversation['id']
+    user_message.bot_id = active_conversation['bots']['id']
+    user_message.restaurant_id = active_conversation['bots']['restaurant_id']
+    system_prompt = get_system_prompt(user_message)
+    contents = build_contents(user_message)
+    tools = functions
+    tool_declarations = [f['decalration'] for f in functions.values()]
+    return system_prompt, tools, tool_declarations, contents
 
 
 def initialize_base_agent(user_message: Message) -> str:
     # 1. Build initial history
-    conversation = build_message_history(user_message)
+    system_prompt, tools, tool_declarations, contents = build_agent(user_message)
     
     # 2. Define Tools
     # Ensure your 'functions' dict has the raw 'declaration' (fixed typo from 'decalration')
-    tool_declarations = [f['decalration'] for f in functions.values()]
-    tools = types.Tool(function_declarations=tool_declarations)
     
     print('Execution loop started.')
     
     # Main Agent Loop
     for iteration in range(20):
         print(f"\n🔄 Iteration {iteration + 1}")
-        
-        # 3. Configure generation
-        config = types.GenerateContentConfig(
-            tools=[tools],
-            # Thought signatures are most effective when temperature is low for reasoning
-            temperature=0.0 
-        )
-        
-        system_prompt = get_system_prompt()
-        config.system_instruction = system_prompt or 'You are a customer service bot.'
-        
-        # 4. Generate Content
+                    
+        # 3. Generate Content
         try:
             response = google_client.models.generate_content(
-                model="gemini-3-pro-preview", # Ensure this model version supports Gemini 3 features
-                contents=conversation,
-                config=config
+                model="gemini-3-flash-preview",
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    tools=[types.Tool(function_declarations=tool_declarations)],
+                )
             )
         except Exception as e:
             print(f"❌ Error generating content: {e}")
@@ -105,7 +117,7 @@ def initialize_base_agent(user_message: Message) -> str:
         # ----------------------------------
 
         # 6. Update History (Critical: This saves the signature for the next turn)
-        conversation.append(
+        contents.append(
             types.Content(parts=model_parts, role="model")
         )
         
@@ -133,12 +145,12 @@ def initialize_base_agent(user_message: Message) -> str:
                 fn_name = function_call.name
                 fn_args = function_call.args
                 
-                print(f'   > Calling: {fn_name}')
+                print(f'   > Calling: {fn_name} with args: {fn_args}')
                 
-                if fn_name in functions:
+                if fn_name in tools:
                     try:
                         # Call the Python function
-                        result = functions[fn_name]['function'](**fn_args)
+                        result = tools[fn_name]['function'](user_message, **fn_args)
                         
                         # Pack response
                         function_responses.append(
@@ -163,7 +175,7 @@ def initialize_base_agent(user_message: Message) -> str:
             # Append function results to history
             # The next loop iteration will now send:
             # [User Message] -> [Model Call + Signature] -> [Function Result]
-            conversation.append(
+            contents.append(
                 types.Content(parts=function_responses, role="user") # Function responses are technically 'user' role in Vertex
             )
             

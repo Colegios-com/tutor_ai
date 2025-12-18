@@ -4,14 +4,13 @@ from init.google_ai import google_client
 
 from google.genai.types import UploadFileConfig
 
-from data.models import Message
+from data.models import Message, File
 from typing import Optional
 
 # Storage
 from storage.storage import get_message
 
 # Standard
-import time
 import tempfile
 import os
 
@@ -36,8 +35,7 @@ def extract_base_data(payload: dict) -> dict:
             'whatsapp_message_id': message_data['id'],
             'phone_number_id': payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'],
             'sender': 'user',
-            'phone_number': message_data['from'],
-            'timestamp': time.time(),
+            'wa_id': payload['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
         }
         if 'context' in message_data:
             if 'id' in message_data['context']:
@@ -96,7 +94,7 @@ def build_user_message(payload: dict) -> Message:
             return Message(
                 **base_data,
                 message_type=message_type,
-                file=file,
+                file=File(uri=file.uri, mime_type=file.mime_type),
             )
         else:
             raise ValueError('Unprocessable message type.')
@@ -121,9 +119,8 @@ def build_agent_message(user_message: Message, raw_response: str, message_type: 
         whatsapp_message_id=f'{user_message.whatsapp_message_id}',
         phone_number_id=user_message.phone_number_id,
         sender='model',
-        phone_number=user_message.phone_number,
+        wa_id=user_message.wa_id,
         message_type=message_type,
         text=raw_response,
         media_id=media_id,
-        timestamp=time.time(),
     )

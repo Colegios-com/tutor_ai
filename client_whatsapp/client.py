@@ -41,7 +41,6 @@ class WhatsappClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(response.text)
             return f'Error making request: {e}'
 
 
@@ -135,7 +134,7 @@ class WhatsappClient:
             payload = {
                 'messaging_product': 'whatsapp',
                 'recipient_type': 'individual',
-                'to': user_message.phone_number,
+                'to': user_message.wa_id,
                 'type': 'reaction',
                 'reaction': {
                     'message_id': user_message.whatsapp_message_id,
@@ -156,7 +155,7 @@ class WhatsappClient:
             return {'status': False, 'message': f'Oops, there was an error sending the message: {e}'}
 
     
-    def send_template(self, phone_number, template_name, components=None):
+    def send_template(self, wa_id, template_name, components=None):
         try:
             headers = {
                 'Authorization': f'Bearer {self.key}',
@@ -166,7 +165,7 @@ class WhatsappClient:
             payload = {
                 'messaging_product': 'whatsapp',
                 'recipient_type': 'individual',
-                'to': phone_number,
+                'to': wa_id,
                 'type': 'template',
                 'template': {
                     'name': template_name,
@@ -182,7 +181,6 @@ class WhatsappClient:
                 headers=headers, 
                 data=json.dumps(payload)
             )
-            print(response.text)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -200,7 +198,7 @@ class WhatsappClient:
 
             payload = {
                 'messaging_product': 'whatsapp',
-                'to': response_message.phone_number,
+                'to': response_message.wa_id,
                 'type': 'text',
                 'text': {
                     'body': response_message.text,
@@ -214,7 +212,6 @@ class WhatsappClient:
             if response.status_code == 200:
                 return response.json()
             else:
-                print(response.text)
                 raise Exception
         except Exception as e:
             return {'status': False, 'message': f'Error sending message: {e}'}
@@ -281,11 +278,9 @@ class WhatsappClient:
                 media_data = response.json()
                 return media_data['id']
             else:
-                print(f'Upload failed: {response.text}')
                 raise Exception(f'Upload failed: {response.text}')
 
         except Exception as e:
-            print(f'Error uploading file: {e}')
             return {'status': False, 'message': f'Error uploading analysis: {e}'}
         
 
@@ -299,7 +294,7 @@ class WhatsappClient:
             payload = {
                 'messaging_product': 'whatsapp',
                 'recipient_type': 'individual',
-                'to': message.phone_number,
+                'to': message.wa_id,
                 'type': file_type,
             }
 

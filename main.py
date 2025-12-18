@@ -22,28 +22,31 @@ async def whatsapp_webhook(hub_mode: str = Query(..., alias='hub.mode'), hub_cha
         return 'Invalid request.'
 
 
-
 @app.post('/whatsapp/', status_code=200)
 async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     payload = await request.json()
 
+
     if not verify_message_payload(payload):
-        return 'Invalid request.'
+        return True
     
     if is_duplicate_message(payload):
-        return 'Message already exists.'
+        return True
     
     user_message = build_user_message(payload)
+
+    add_messages(user_messages=[user_message])
 
     # --- 1. Define the Keep-Alive Function ---
     async def keep_typing_alive():
         try:
+            count = 1
             while True:
                 # Send the indicator
                 # Note: If whatsapp_client methods are synchronous, wrap them if needed, 
                 # but standard HTTP requests are fast enough to just call here.
                 whatsapp_client.send_typing_indicator(user_message=user_message)
-                
+                count += 1
                 # Wait 20 seconds (WhatsApp indicators expire after ~25s, so 20s is safe)
                 await asyncio.sleep(20)
         except asyncio.CancelledError:
@@ -70,9 +73,9 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
         typing_task.cancel()
 
     if not response_message:
-        return 'Error sending response.'
+        return False
 
     # Save messages (If add_messages is DB heavy, consider awaiting it or offloading it)
-    add_messages(new_messages=[user_message, response_message])
+    add_messages(user_messages=[response_message])
 
     return True
